@@ -147,4 +147,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+        # Submits each build for external TestFlight beta review (needs TestFlight
+        # Test Information filled in once in App Store Connect).
         submit_to_testflight: true

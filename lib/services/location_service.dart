@@ -6,12 +6,15 @@ sealed class LocationResult {
 }
 
 class LocationFix extends LocationResult {
-  const LocationFix(this.lat, this.lng, this.accuracy);
+  const LocationFix(this.lat, this.lng, this.accuracy, {this.heading});
   final double lat;
   final double lng;
 
   /// Metres.
   final double accuracy;
+
+  /// Direction of travel in degrees from north, when the device knows it.
+  final double? heading;
 }
 
 class LocationFailure extends LocationResult {
@@ -54,5 +57,38 @@ Future<LocationResult> currentLocation() async {
     return const LocationFailure(
       'Could not get your location. Pick a start point instead.',
     );
+  }
+}
+
+typedef LocationStreamProvider = Stream<LocationFix> Function();
+
+/// Live positions via geolocator (web + mobile). Call only after
+/// [currentLocation] returned a fix, so permission is already granted.
+/// Errors end nothing: they are dropped and the stream keeps going.
+Stream<LocationFix> locationStream() {
+  try {
+    return Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 3,
+          ),
+        )
+        .map(
+          (p) => LocationFix(
+            p.latitude,
+            p.longitude,
+            p.accuracy,
+            heading:
+                p.heading.isFinite &&
+                    p.heading >= 0 &&
+                    p.speed.isFinite &&
+                    p.speed > 0.4
+                ? p.heading
+                : null,
+          ),
+        )
+        .handleError((Object _) {});
+  } catch (_) {
+    return const Stream.empty();
   }
 }

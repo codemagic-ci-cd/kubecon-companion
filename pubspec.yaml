@@ -69,6 +69,7 @@ flutter:
     - assets/data/info.json
     - assets/data/rooms_raw.json
     - assets/data/official_map.json
+    - assets/data/outdoor.json
     - assets/maps/kcna26_venue_map.jpg
     - assets/brand/
 

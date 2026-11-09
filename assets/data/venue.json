@@ -2127,8 +2127,8 @@
    "id": "offsite-hilton-city-center",
    "name": "Hilton Salt Lake City Center",
    "address": "255 South West Temple, Salt Lake City, UT 84101",
-   "lat": 40.762,
-   "lng": -111.8945,
+   "lat": 40.76395,
+   "lng": -111.89362,
    "walkMinutes": 5,
    "directions": [
     "Exit the Salt Palace through the 200 South (Main) Entrance onto 200 South",
@@ -2141,8 +2141,8 @@
    "id": "offsite-kimpton-monaco",
    "name": "Kimpton Hotel Monaco Salt Lake City (Floor 2, Paris Ballroom)",
    "address": "15 W 200 S, Salt Lake City, UT 84101",
-   "lat": 40.7646976,
-   "lng": -111.8948309,
+   "lat": 40.76483,
+   "lng": -111.8917,
    "walkMinutes": 5,
    "directions": [
     "Exit the Salt Palace through the 200 South (Main) Entrance onto 200 South",

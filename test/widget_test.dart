@@ -6,14 +6,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kubecon_companion/data/models.dart';
 import 'package:kubecon_companion/main.dart';
+import 'package:kubecon_companion/outdoor/outdoor_map.dart';
 import 'package:kubecon_companion/screens/directions_screen.dart';
 import 'package:kubecon_companion/screens/now_screen.dart';
 import 'package:kubecon_companion/services/location_service.dart';
 import 'package:kubecon_companion/services/notification_service.dart';
 import 'package:kubecon_companion/state/app_state.dart';
+import 'package:kubecon_companion/widgets/outdoor_map_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fixtures.dart';
+import 'outdoor_fixture.dart';
 
 Future<AppState> makeState({
   Map<String, Object> prefs = const {},
@@ -326,11 +329,114 @@ void main() {
     await pumpApp(
       tester,
       state,
-      home: const DirectionsScreen(roomId: 'offsite-hotel'),
+      home: DirectionsScreen(
+        roomId: 'offsite-hotel',
+        outdoorLoader: (_) async => null,
+      ),
     );
     expect(find.text('Example Hotel'), findsOneWidget);
     expect(find.text('4 min walk'), findsOneWidget);
     expect(find.text('Open in maps'), findsOneWidget);
+    expect(find.text('Turn right'), findsOneWidget);
+  });
+
+  Future<void> openOffsite(
+    WidgetTester tester,
+    AppState state, {
+    LocationProvider? locate,
+    Stream<LocationFix> Function()? positions,
+  }) async {
+    tester.view.physicalSize = const Size(375 * 3, 812 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final map = OutdoorMap.fromJson(outdoorFixture());
+    // The route animates forever, so pump frames instead of settling.
+    await tester.pumpWidget(
+      KubeConApp(
+        state: state,
+        home: DirectionsScreen(
+          roomId: 'offsite-hotel',
+          locate:
+              locate ?? () async => const LocationFailure('No location here'),
+          positions: positions ?? () => const Stream.empty(),
+          outdoorLoader: (_) async => map,
+        ),
+      ),
+    );
+    await pumpFor(tester, 1);
+  }
+
+  testWidgets('off-site directions are interactive on our street map', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await openOffsite(tester, state);
+    expect(find.byType(OutdoorMapView), findsOneWidget);
+    expect(find.text('Example Hotel'), findsOneWidget);
+    expect(find.text('Off-site'), findsOneWidget);
+    expect(find.text('From the North entrance'), findsOneWidget);
+    expect(find.text('Head east on Third Ave'), findsOneWidget);
+    expect(find.textContaining('Step 1 of 2'), findsOneWidget);
+    expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+    expect(find.text('Open in maps'), findsOneWidget);
+    expect(find.byTooltip('Recenter'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Next step'));
+    await pumpFor(tester, 1);
+    expect(find.text('Arrive at Example Hotel on your left'), findsOneWidget);
+
+    // The old written steps stay available, collapsed.
+    await tester.ensureVisible(find.text('Written directions'));
+    await tester.tap(find.text('Written directions'));
+    await pumpFor(tester, 1);
+    expect(find.text('Exit onto 200 South'), findsOneWidget);
+
+    // Change the start to another exit.
+    await tester.ensureVisible(find.text('From the North entrance'));
+    await pumpFor(tester, 1);
+    await tester.tap(find.text('From the North entrance'));
+    await pumpFor(tester, 1);
+    await tester.tap(find.text('South entrance'));
+    await pumpFor(tester, 1);
+    expect(find.text('From the South entrance'), findsOneWidget);
+    expect(find.text('Head north on Main'), findsOneWidget);
+  });
+
+  testWidgets('off-site directions follow live location to arrival', (
+    tester,
+  ) async {
+    final state = await makeState();
+    final fixes = StreamController<LocationFix>();
+    addTearDown(fixes.close);
+    LocationFix at(double east, double north) {
+      final g = fxGeo(east, north);
+      return LocationFix(g[0], g[1], 10);
+    }
+
+    await openOffsite(
+      tester,
+      state,
+      locate: () async => at(205, 60),
+      positions: () => fixes.stream,
+    );
+    expect(find.text('From your location'), findsOneWidget);
+    expect(find.text('Head north on Second'), findsOneWidget);
+
+    // Wander off: rerouted after two fixes.
+    fixes.add(at(300, 100));
+    await pumpFor(tester, 1);
+    fixes.add(at(302, 100));
+    await pumpFor(tester, 1);
+    expect(find.text('Rerouted'), findsOneWidget);
+    await pumpFor(tester, 2);
+
+    fixes.add(at(105, 202));
+    await pumpFor(tester, 1);
+    expect(find.text('You have arrived'), findsWidgets);
+
+    // Closing the screen stops listening.
+    await tester.pumpWidget(const SizedBox());
+    expect(fixes.hasListener, isFalse);
   });
 
   testWidgets('unknown rooms show the raw location text', (tester) async {

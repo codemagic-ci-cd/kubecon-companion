@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../data/directions.dart';
-import '../data/models.dart';
 import '../state/app_scope.dart';
 import '../theme/brand.dart';
 import '../widgets/common.dart';
 import '../services/location_service.dart';
 import 'map_directions.dart';
+import 'outdoor_directions.dart';
+import '../outdoor/outdoor_loader.dart';
 
 IconData stepIcon(StepKind kind) => switch (kind) {
   StepKind.start => Icons.door_front_door_outlined,
@@ -25,11 +26,19 @@ class DirectionsScreen extends StatelessWidget {
     super.key,
     required this.roomId,
     this.locate = currentLocation,
+    this.positions = locationStream,
+    this.outdoorLoader = loadOutdoorMap,
   });
   final String roomId;
 
   /// Device location lookup (injectable for tests).
   final LocationProvider locate;
+
+  /// Live positions for off-site walking directions (injectable for tests).
+  final LocationStreamProvider positions;
+
+  /// Loads the street map for off-site venues (injectable for tests).
+  final OutdoorLoader outdoorLoader;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +64,12 @@ class DirectionsScreen extends StatelessWidget {
             locate: locate,
           ),
         RoomLocation l => _TextDirections(location: l),
-        OffsiteLocation o => _OffsiteDirections(venue: o.venue),
+        OffsiteLocation o => OffsiteDirections(
+          venue: o.venue,
+          locate: locate,
+          positions: positions,
+          loader: outdoorLoader,
+        ),
         UnknownLocation u => EmptyState(
           icon: Icons.not_listed_location_outlined,
           title: u.label,
@@ -244,77 +258,6 @@ class _StepRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _OffsiteDirections extends StatelessWidget {
-  const _OffsiteDirections({required this.venue});
-  final OffsiteVenue venue;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final raw = venue.directions.isEmpty
-        ? ['Exit the Salt Palace and follow the address below']
-        : venue.directions;
-    final steps = [
-      for (var i = 0; i < raw.length; i++)
-        DirectionStep(
-          raw[i],
-          i == 0
-              ? StepKind.start
-              : (i == raw.length - 1 ? StepKind.arrive : StepKind.walk),
-        ),
-    ];
-    final query = venue.lat != null && venue.lng != null
-        ? '${venue.lat},${venue.lng}'
-        : (venue.address ?? venue.name);
-    final mapsUrl =
-        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}';
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      children: [
-        Text(venue.name, style: text.headlineSmall),
-        const SizedBox(height: 4),
-        if (venue.address != null)
-          SelectableText(venue.address!, style: text.bodyMedium),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            const Pill('Off-site', icon: Icons.location_city),
-            if (venue.walkMinutes != null)
-              Pill(
-                '${venue.walkMinutes} min walk',
-                icon: Icons.directions_walk,
-                color: Brand.neverBlue,
-              ),
-            const Pill(
-              'From the 200 South entrance',
-              icon: Icons.door_front_door_outlined,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        StepList(steps: steps),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: SubtleButton(
-            icon: Icons.open_in_new,
-            label: 'Open in maps',
-            onPressed: () => openLink(context, mapsUrl),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Walking times are estimates. Bring your badge: you need it to get back into the venue.',
-          style: text.bodySmall,
-        ),
-      ],
     );
   }
 }
