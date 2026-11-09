@@ -6,8 +6,9 @@ plugins {
 
 android {
     namespace = "io.codemagic.kubecon_companion"
-    // flutter_local_notifications 23 requires compileSdk 37.
-    compileSdk = maxOf(flutter.compileSdkVersion, 37)
+    // Stay on Flutter's default (36): API 37 ships as 'android-37.0', which current
+    // build images and AGP don't resolve as 'android-37' yet.
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

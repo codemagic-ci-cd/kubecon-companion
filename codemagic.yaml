@@ -69,6 +69,8 @@ workflows:
     max_build_duration: 60
     environment:
       flutter: stable
+      groups:
+        - android_signing # app-level secure vars: CM_KEYSTORE_B64, CM_KEYSTORE_PASSWORD, CM_KEY_PASSWORD, CM_KEY_ALIAS
       # Optional: upload a keystore in Codemagic and reference it here to sign
       # releases. Without it, builds are signed with the debug key.
       # android_signing:
@@ -80,8 +82,10 @@ workflows:
       - name: Build APK and App Bundle
         script: |
           set -euo pipefail
-          # Flutter 3.47 compiles against Android API 37, which the build image may not have yet.
-          yes | sdkmanager "platforms;android-37" > /dev/null || true
+          if [ -n "${CM_KEYSTORE_B64:-}" ]; then
+            echo "$CM_KEYSTORE_B64" | base64 --decode > "$CM_BUILD_DIR/upload.jks"
+            export CM_KEYSTORE_PATH="$CM_BUILD_DIR/upload.jks"
+          fi
           flutter build apk --release --build-number=$BUILD_NUMBER
           flutter build appbundle --release --build-number=$BUILD_NUMBER
           ls -la build/app/outputs/flutter-apk/app-release.apk
