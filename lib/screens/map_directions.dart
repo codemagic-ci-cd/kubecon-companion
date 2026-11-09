@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../data/models.dart';
 import '../data/official_map.dart';
+import '../location/live_location.dart';
 import '../location/start_point.dart';
 import '../services/location_service.dart';
 import '../state/app_scope.dart';
@@ -84,6 +85,8 @@ class MapDirections extends StatefulWidget {
     required this.room,
     required this.levelLabel,
     required this.locate,
+    this.positions = locationStream,
+    this.permitted = hasLocationPermission,
   });
 
   final OfficialMap map;
@@ -91,11 +94,21 @@ class MapDirections extends StatefulWidget {
   final String levelLabel;
   final LocationProvider locate;
 
+  /// Live positions for the blue dot, used only once permission is granted.
+  final LocationStreamProvider positions;
+  final LocationPermissionCheck permitted;
+
   @override
   State<MapDirections> createState() => _MapDirectionsState();
 }
 
-class _MapDirectionsState extends State<MapDirections> {
+class _MapDirectionsState extends State<MapDirections>
+    with WidgetsBindingObserver {
+  late final _live = LiveLocationController(
+    map: widget.map,
+    locate: widget.locate,
+    positions: widget.positions,
+  );
   final _mapKey = GlobalKey<OfficialMapViewState>();
   final _pages = PageController();
   StartPoint _start = _entrances.first;
@@ -118,6 +131,7 @@ class _MapDirectionsState extends State<MapDirections> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final picked = AppScope.read(context).directionsStart;
     if (picked != null && _map.node(picked.nodeId) != null) {
       _start = StartPoint(picked.nodeId, picked.label, icon: picked.icon);
@@ -127,12 +141,58 @@ class _MapDirectionsState extends State<MapDirections> {
       _focusStep(0);
       // No start picked by hand this session: show the route from the main
       // entrance right away and switch once a location fix arrives.
-      if (picked == null) _useLocation(explicit: false);
+      if (picked == null) {
+        _useLocation(explicit: false);
+      } else {
+        _showDotIfPermitted();
+      }
     });
+  }
+
+  /// Shows the live dot when permission is already granted; never asks.
+  Future<void> _showDotIfPermitted() async {
+    var ok = false;
+    try {
+      ok = await widget.permitted();
+    } catch (_) {}
+    if (ok && mounted) _live.startStream();
+  }
+
+  bool _foreground = true;
+
+  /// False while another route covers this one (tickers are muted then).
+  bool _onScreen = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final on = TickerMode.valuesOf(context).enabled;
+    if (on != _onScreen) {
+      _onScreen = on;
+      _syncLive();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _syncLive();
+  }
+
+  /// Runs the position stream only while this screen is showing and the app
+  /// is in the foreground.
+  void _syncLive() {
+    if (_foreground && _onScreen) {
+      _live.resume();
+    } else {
+      _live.pause();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _live.dispose();
     _toastTimer?.cancel();
     _pages.dispose();
     super.dispose();
@@ -364,7 +424,10 @@ class _MapDirectionsState extends State<MapDirections> {
         'Could not get your location. Pick a start point instead.',
       );
     }
-    if (!mounted || gen != _locateGen) return;
+    if (!mounted) return;
+    // A fix means permission is granted: show the live dot.
+    if (res is LocationFix) _live.startStream(res);
+    if (gen != _locateGen) return;
     final g = switch (res) {
       LocationFix f => chooseGeoStart(
         _map,
@@ -467,6 +530,7 @@ class _MapDirectionsState extends State<MapDirections> {
                     selectedRoomId: _geo?.id,
                     route: rt,
                     currentStep: _step,
+                    liveLocation: _live.placement,
                     initialFocus: rt == null ? null : _stepRect(rt.steps.first),
                   ),
                 ),

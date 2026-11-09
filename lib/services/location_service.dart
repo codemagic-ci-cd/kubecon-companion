@@ -60,6 +60,18 @@ Future<LocationResult> currentLocation() async {
   }
 }
 
+typedef LocationPermissionCheck = Future<bool> Function();
+
+/// Whether location permission is already granted, without asking.
+Future<bool> hasLocationPermission() async {
+  try {
+    final p = await Geolocator.checkPermission();
+    return p == LocationPermission.always || p == LocationPermission.whileInUse;
+  } catch (_) {
+    return false;
+  }
+}
+
 typedef LocationStreamProvider = Stream<LocationFix> Function();
 
 /// Live positions via geolocator (web + mobile). Call only after

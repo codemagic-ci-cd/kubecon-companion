@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kubecon_companion/widgets/session_tile.dart';
 import 'package:kubecon_companion/data/models.dart';
+import 'package:kubecon_companion/data/official_map.dart';
 import 'package:kubecon_companion/main.dart';
 import 'package:kubecon_companion/outdoor/outdoor_map.dart';
 import 'package:kubecon_companion/screens/directions_screen.dart';
+import 'package:kubecon_companion/screens/map_screen.dart';
 import 'package:kubecon_companion/screens/now_screen.dart';
 import 'package:kubecon_companion/services/location_service.dart';
 import 'package:kubecon_companion/services/notification_service.dart';
@@ -23,6 +26,7 @@ Future<AppState> makeState({
   Map<String, Object> prefs = const {},
   bool withMap = true,
   bool withDetails = true,
+  OfficialMap? map,
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
   return AppState(
@@ -36,7 +40,7 @@ Future<AppState> makeState({
           {'title': 'Official schedule', 'url': 'https://example.com'},
         ],
       }),
-      officialMap: withMap ? testOfficialMap() : null,
+      officialMap: withMap ? (map ?? testOfficialMap()) : null,
     ),
     prefs: await SharedPreferences.getInstance(),
     notifications: NoopNotificationService(),
@@ -248,7 +252,12 @@ void main() {
     await tester.pumpWidget(
       KubeConApp(
         state: state,
-        home: DirectionsScreen(roomId: 'l1-hall-de', locate: locate),
+        home: DirectionsScreen(
+          roomId: 'l1-hall-de',
+          locate: locate,
+          positions: () => const Stream.empty(),
+          permitted: () async => false,
+        ),
       ),
     );
     await pumpFor(tester, 1);
@@ -493,5 +502,149 @@ void main() {
     await tester.tap(find.text('Saved'));
     await tester.pumpAndSettle();
     expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
+  });
+
+  testWidgets('locate me shows the live dot chip and follows fixes', (
+    tester,
+  ) async {
+    final map = OfficialMap.fromJson(
+      jsonDecode(File('assets/data/official_map.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+    final state = await makeState(map: map);
+    final fixes = StreamController<LocationFix>.broadcast();
+    addTearDown(fixes.close);
+    var asked = 0;
+    await pumpApp(
+      tester,
+      state,
+      home: MapScreen(
+        locate: () async {
+          asked++;
+          return const LocationFix(40.76583, -111.89503, 12);
+        },
+        positions: () => fixes.stream,
+      ),
+    );
+    expect(find.byTooltip('Locate me'), findsOneWidget);
+    await tester.tap(find.byTooltip('Locate me'));
+    await pumpFor(tester, 1);
+    expect(asked, 1);
+    expect(fixes.hasListener, isTrue);
+    expect(
+      find.text('You · near Badge Pick-Up · ±12 m · floor unknown'),
+      findsOneWidget,
+    );
+
+    fixes.add(const LocationFix(40.76748, -111.89503, 30, heading: 90));
+    await pumpFor(tester, 1);
+    expect(
+      find.text('You · near Room 150 · ±30 m · floor unknown'),
+      findsOneWidget,
+    );
+
+    // Far away: off the map, with walking directions to the venue.
+    fixes.add(const LocationFix(40.7608, -111.8910, 20));
+    await pumpFor(tester, 1);
+    expect(find.textContaining("You're about"), findsOneWidget);
+    expect(find.text('Directions to the venue'), findsOneWidget);
+
+    // Leaving the tab stops the stream; coming back restarts it.
+    await tester.pumpWidget(
+      KubeConApp(
+        state: state,
+        home: MapScreen(
+          active: false,
+          locate: () async => const LocationFailure('unused'),
+          positions: () => fixes.stream,
+        ),
+      ),
+    );
+    await pumpFor(tester, 1);
+    expect(fixes.hasListener, isFalse);
+
+    await tester.pumpWidget(const SizedBox());
+    expect(fixes.hasListener, isFalse);
+  });
+
+  testWidgets('a route pushed over the map pauses the live stream', (
+    tester,
+  ) async {
+    final map = OfficialMap.fromJson(
+      jsonDecode(File('assets/data/official_map.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+    final state = await makeState(map: map);
+    final fixes = StreamController<LocationFix>.broadcast();
+    addTearDown(fixes.close);
+    await pumpApp(
+      tester,
+      state,
+      home: MapScreen(
+        locate: () async => const LocationFix(40.76583, -111.89503, 12),
+        positions: () => fixes.stream,
+      ),
+    );
+    await tester.tap(find.byTooltip('Locate me'));
+    await pumpFor(tester, 1);
+    expect(fixes.hasListener, isTrue);
+
+    final nav = tester.state<NavigatorState>(find.byType(Navigator).first);
+    nav.push(
+      MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('x'))),
+    );
+    await pumpFor(tester, 1);
+    expect(fixes.hasListener, isFalse);
+
+    nav.pop();
+    await pumpFor(tester, 1);
+    expect(fixes.hasListener, isTrue);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('denied location shows why and dims the locate button', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await pumpApp(
+      tester,
+      state,
+      home: MapScreen(
+        locate: () async => const LocationFailure(
+          'Location permission was not granted. Pick a start point instead.',
+        ),
+        positions: () => const Stream.empty(),
+      ),
+    );
+    await tester.tap(find.byTooltip('Locate me'));
+    await pumpFor(tester, 1);
+    expect(find.text('Location permission was not granted.'), findsOneWidget);
+    expect(
+      find.byTooltip('Location unavailable, tap to retry'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.location_disabled), findsOneWidget);
+  });
+
+  testWidgets('saving turns the reminder on; it can be muted and stays saved', (
+    tester,
+  ) async {
+    final state = await makeState();
+    expect(state.isReminderOn('t1'), isFalse);
+    await state.toggleSaved('t1');
+    expect(state.isSaved('t1'), isTrue);
+    expect(state.isReminderOn('t1'), isTrue);
+    expect(state.upcomingReminders.any((r) => r.sessionId == 't1'), isTrue);
+
+    expect(await state.toggleReminder('t1'), isFalse);
+    expect(state.isSaved('t1'), isTrue);
+    expect(state.isReminderOn('t1'), isFalse);
+    expect(state.upcomingReminders.any((r) => r.sessionId == 't1'), isFalse);
+
+    // Unsave + save again: reminder is back on by default.
+    await state.toggleSaved('t1');
+    await state.toggleSaved('t1');
+    expect(state.isReminderOn('t1'), isTrue);
+    state.dispose(); // cancels the reschedule debounce timer
   });
 }

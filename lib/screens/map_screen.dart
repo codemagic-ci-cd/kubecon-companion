@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../data/models.dart';
 import '../data/official_map.dart';
+import '../location/live_location.dart';
+import '../location/start_point.dart';
+import '../services/location_service.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
@@ -14,23 +17,123 @@ import 'directions_screen.dart';
 /// The official venue map with our room boxes: pan, zoom, jump to a panel,
 /// tap a room for what's on there and directions.
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({
+    super.key,
+    this.active = true,
+    this.locate = currentLocation,
+    this.positions = locationStream,
+  });
+
+  /// The Map tab is showing; live location pauses while it is not.
+  final bool active;
+
+  /// Permission + first fix and live positions (injectable for tests).
+  final LocationProvider locate;
+  final LocationStreamProvider positions;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   final _mapKey = GlobalKey<OfficialMapViewState>();
   String? _selectedRoomId;
   String? _regionId = 'sp-L1';
+  LiveLocationController? _live;
+  bool _foreground = true;
+
+  /// False while another route covers the Map tab (tickers are muted then).
+  bool _onScreen = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final on = TickerMode.valuesOf(context).enabled;
+    if (on != _onScreen) {
+      _onScreen = on;
+      _syncLive();
+    }
+  }
+
+  @override
+  void didUpdateWidget(MapScreen old) {
+    super.didUpdateWidget(old);
+    if (old.active != widget.active) _syncLive();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _syncLive();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _live?.dispose();
+    super.dispose();
+  }
+
+  /// Runs the position stream only while the tab is visible, not covered by
+  /// another route, and the app is in the foreground.
+  void _syncLive() {
+    final live = _live;
+    if (live == null) return;
+    if (widget.active && _onScreen && _foreground) {
+      live.resume();
+    } else {
+      live.pause();
+    }
+  }
+
+  LiveLocationController _liveFor(OfficialMap map) => _live ??=
+      LiveLocationController(
+          map: map,
+          locate: widget.locate,
+          positions: widget.positions,
+        )
+        ..onFollowFix = _followDot
+        ..addListener(_onLive);
+
+  LiveStatus? _lastStatus;
+
+  void _onLive() {
+    final live = _live!;
+    if (live.status != _lastStatus &&
+        live.status == LiveStatus.unavailable &&
+        live.error != null) {
+      ScaffoldMessenger.maybeOf(context)
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(live.error!)));
+    }
+    _lastStatus = live.status;
+    if (mounted) setState(() {});
+  }
+
+  /// Keeps the camera on the dot while following.
+  void _followDot() {
+    final p = _live?.placement.value;
+    if (p == null || p.offMap || !mounted) return;
+    if (_regionId != 'sp-L1') setState(() => _regionId = 'sp-L1');
+    _mapKey.currentState?.centerOn(p.pos);
+  }
+
+  Future<void> _locateMe(OfficialMap map) => _liveFor(map).locateMe();
 
   void _goToRegion(MapRegion r) {
+    _live?.userMoved();
     setState(() => _regionId = r.id);
     _mapKey.currentState?.animateTo(r.rect, padding: 8);
   }
 
   void _fitAll() {
+    _live?.userMoved();
     setState(() => _regionId = null);
     _mapKey.currentState?.fit();
   }
@@ -38,6 +141,7 @@ class _MapScreenState extends State<MapScreen> {
   void _selectRoom(Room room, {bool moveCamera = false}) {
     final map = AppScope.read(context).data.officialMap;
     final geo = map?.room(room.id, partOf: room.partOf);
+    _live?.userMoved();
     setState(() {
       _selectedRoomId = room.id;
       if (geo != null) _regionId = geo.regionId;
@@ -132,6 +236,8 @@ class _MapScreenState extends State<MapScreen> {
                       // Open on the main Salt Palace floor: the whole poster is tiny on a phone.
                       initialFocus: map.region('sp-L1')?.rect,
                       selectedRoomId: selectedGeo?.id,
+                      liveLocation: _live?.placement,
+                      onUserMove: () => _live?.userMoved(),
                       onRoomTap: (id) {
                         final room = venue.room(id);
                         if (room != null) _selectRoom(room);
@@ -142,12 +248,40 @@ class _MapScreenState extends State<MapScreen> {
                 Positioned(
                   right: 12,
                   top: 12,
-                  child: MapIconButton(
-                    tooltip: 'Show whole map',
-                    icon: Icons.fit_screen_outlined,
-                    onPressed: _fitAll,
+                  child: Column(
+                    children: [
+                      MapIconButton(
+                        tooltip: 'Show whole map',
+                        icon: Icons.fit_screen_outlined,
+                        onPressed: _fitAll,
+                      ),
+                      const SizedBox(height: 8),
+                      LocateMeButton(
+                        status: _live?.status ?? LiveStatus.off,
+                        follow: _live?.follow ?? false,
+                        onPressed: () => _locateMe(map),
+                      ),
+                    ],
                   ),
                 ),
+                if (_live?.placement.value case final p?)
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 12,
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: LiveLocationChip(
+                        placement: p,
+                        onDirections: () {
+                          final entrance = map.node(OfficialMap.mainEntranceId);
+                          if (entrance != null) {
+                            openLink(context, walkingDirectionsUrl(entrance));
+                          }
+                        },
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -228,6 +362,119 @@ class RegionChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         children: chips,
+      ),
+    );
+  }
+}
+
+/// The "Locate me" map button: subtle when off, blue while following,
+/// dimmed when location is unavailable (tap to retry).
+class LocateMeButton extends StatelessWidget {
+  const LocateMeButton({
+    super.key,
+    required this.status,
+    required this.follow,
+    required this.onPressed,
+  });
+
+  final LiveStatus status;
+  final bool follow;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = context.brand;
+    final on = status == LiveStatus.live && follow;
+    final unavailable = status == LiveStatus.unavailable;
+    return IconButton.filled(
+      tooltip: switch (status) {
+        LiveStatus.unavailable => 'Location unavailable, tap to retry',
+        LiveStatus.live when !follow => 'Centre on me',
+        _ => 'Locate me',
+      },
+      style: IconButton.styleFrom(
+        backgroundColor: on ? Brand.neverBlue : b.subtle,
+        foregroundColor: on
+            ? Colors.white
+            : unavailable
+            ? b.heading.withValues(alpha: 0.4)
+            : (status == LiveStatus.live ? Brand.neverBlue : b.heading),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Brand.radiusMd),
+        ),
+      ),
+      onPressed: onPressed,
+      icon: status == LiveStatus.starting
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(unavailable ? Icons.location_disabled : Icons.my_location),
+    );
+  }
+}
+
+/// "You · near Badge Pick-Up · ±12 m · floor unknown", or how far away the
+/// venue is when the fix is off the map.
+class LiveLocationChip extends StatelessWidget {
+  const LiveLocationChip({
+    super.key,
+    required this.placement,
+    required this.onDirections,
+  });
+
+  final LivePlacement placement;
+  final VoidCallback onDirections;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = context.brand;
+    final text = Theme.of(context).textTheme;
+    final p = placement;
+    final label = p.offMap
+        ? "You're about ${p.awayLabel} from the venue"
+        : [
+            'You',
+            if (p.near?.place != null) 'near ${p.near!.place}',
+            '±${p.accuracyMetres} m',
+            'floor unknown',
+          ].join(' · ');
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      decoration: BoxDecoration(
+        color: b.isDark ? Brand.darkSubtle : Colors.white,
+        borderRadius: BorderRadius.circular(Brand.radiusMd),
+        border: Border.all(color: b.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.my_location, size: 16, color: Brand.neverBlue),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: text.labelLarge?.copyWith(color: b.heading),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (p.offMap) ...[
+            const SizedBox(height: 8),
+            SubtleButton(
+              icon: Icons.directions_walk,
+              label: 'Directions to the venue',
+              onPressed: onDirections,
+            ),
+          ],
+        ],
       ),
     );
   }

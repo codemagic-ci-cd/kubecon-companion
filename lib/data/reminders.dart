@@ -65,7 +65,7 @@ String _dedupeKey(DateTime start, String kind, String title) {
 
 /// Everything that should notify, deduplicated, future-only, soonest first.
 ///
-/// Rules: saved and reminded sessions always notify; highlighted sessions
+/// Rules: saved (unless muted) and reminded sessions always notify; highlighted sessions
 /// notify except individual keynote talks (the keynote block from
 /// happenings covers them, which keeps mornings quiet); happenings notify
 /// for meals, breaks, keynote blocks and social events.
@@ -76,6 +76,7 @@ List<Reminder> buildReminders({
   required DateTime now,
   Set<String> saved = const {},
   Set<String> reminded = const {},
+  Set<String> muted = const {},
   bool includeHighlights = true,
   Map<String, String> rawRoomNames = const {},
   int max = maxScheduledReminders,
@@ -101,6 +102,8 @@ List<Reminder> buildReminders({
   }
 
   for (final s in sessions) {
+    // A muted saved session stays silent, even if it is also a highlight.
+    if (muted.contains(s.id) && !reminded.contains(s.id)) continue;
     final personal = saved.contains(s.id) || reminded.contains(s.id);
     final highlight = includeHighlights && s.highlight && s.type != 'keynote';
     if (!personal && !highlight) continue;

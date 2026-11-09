@@ -12,6 +12,7 @@ void main() {
   List<Reminder> build({
     DateTime? now,
     Set<String> saved = const {},
+    Set<String> muted = const {},
     int max = 60,
   }) => buildReminders(
     sessions: sessions,
@@ -19,6 +20,7 @@ void main() {
     venue: venue,
     now: now ?? beforeConf,
     saved: saved,
+    muted: muted,
     max: max,
   );
 
@@ -53,5 +55,12 @@ void main() {
     final r = build(now: afterLunch, saved: {'w1'});
     expect(r.map((e) => e.title), ['Reception', 'Starting soon: Session w1']);
     expect(build(max: 1), hasLength(1));
+  });
+
+  test('a muted saved session does not notify', () {
+    final on = build(saved: {'t1'});
+    expect(on.any((e) => e.sessionId == 't1'), isTrue);
+    final off = build(saved: {'t1'}, muted: {'t1'});
+    expect(off.any((e) => e.sessionId == 't1'), isFalse);
   });
 }

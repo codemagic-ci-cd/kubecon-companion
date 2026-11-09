@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:flutter/foundation.dart';
+
 import '../data/official_map.dart';
+import '../location/live_location.dart';
 import '../theme/brand.dart';
 
 /// The official venue map image in an [InteractiveViewer], with our room
@@ -17,6 +20,8 @@ class OfficialMapView extends StatefulWidget {
     this.currentStep,
     this.onRoomTap,
     this.initialFocus,
+    this.liveLocation,
+    this.onUserMove,
   });
 
   final OfficialMap map;
@@ -31,6 +36,12 @@ class OfficialMapView extends StatefulWidget {
 
   /// Image-space rect to show first instead of the whole map.
   final Rect? initialFocus;
+
+  /// The device position, drawn as a blue dot on its own layer.
+  final ValueListenable<LivePlacement?>? liveLocation;
+
+  /// The user started panning or zooming.
+  final VoidCallback? onUserMove;
 
   @override
   State<OfficialMapView> createState() => OfficialMapViewState();
@@ -163,6 +174,26 @@ class OfficialMapViewState extends State<OfficialMapView>
 
   void fit() => animateTo(widget.map.bounds, padding: 0);
 
+  /// Pans so [p] (image px) is centred, zooming in to show at most [span]
+  /// image px across the shorter side but never zooming out.
+  void centerOn(Offset p, {double span = 480}) {
+    final v = _viewport;
+    if (v == null) {
+      _lastTarget = (
+        Rect.fromCenter(center: p, width: span, height: span),
+        0,
+        0,
+      );
+      return;
+    }
+    final cur = _transform.value.getMaxScaleOnAxis();
+    final s = math.max(cur, math.min(v.width, v.height) / span);
+    animateTo(
+      Rect.fromCenter(center: p, width: v.width / s, height: v.height / s),
+      padding: 0,
+    );
+  }
+
   void _place(Size v) {
     final last = _lastTarget;
     final focus = widget.initialFocus;
@@ -202,7 +233,10 @@ class OfficialMapViewState extends State<OfficialMapView>
             minScale: _fitScale(v),
             maxScale: _maxScale(v),
             boundaryMargin: _margin(v),
-            onInteractionStart: (_) => _camera.stop(),
+            onInteractionStart: (_) {
+              _camera.stop();
+              widget.onUserMove?.call();
+            },
             child: GestureDetector(
               onTapUp: widget.onRoomTap == null
                   ? null
@@ -237,6 +271,17 @@ class OfficialMapViewState extends State<OfficialMapView>
                         ),
                       ),
                     ),
+                    if (widget.liveLocation != null)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: RepaintBoundary(
+                            child: LiveDotLayer(
+                              placement: widget.liveLocation!,
+                              transform: _transform,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -481,6 +526,181 @@ class MapOverlayPainter extends CustomPainter {
       old.selected != selected ||
       old.route != route ||
       old.currentStep != currentStep;
+}
+
+/// The device position on the map: accuracy circle, heading cone and a blue
+/// dot, eased between fixes. Repaints only itself (no relayout).
+class LiveDotLayer extends StatefulWidget {
+  const LiveDotLayer({
+    super.key,
+    required this.placement,
+    required this.transform,
+  });
+
+  final ValueListenable<LivePlacement?> placement;
+  final TransformationController transform;
+
+  @override
+  State<LiveDotLayer> createState() => _LiveDotLayerState();
+}
+
+class _LiveDotLayerState extends State<LiveDotLayer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _move = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  );
+  late final _curve = CurvedAnimation(parent: _move, curve: Curves.easeInOut);
+  LiveDot? _from;
+  LiveDot? _to;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.placement.addListener(_onFix);
+    _to = LiveDot.of(widget.placement.value);
+  }
+
+  @override
+  void didUpdateWidget(LiveDotLayer old) {
+    super.didUpdateWidget(old);
+    if (old.placement != widget.placement) {
+      old.placement.removeListener(_onFix);
+      widget.placement.addListener(_onFix);
+      _onFix();
+    }
+  }
+
+  void _onFix() {
+    final next = LiveDot.of(widget.placement.value);
+    final cur = current;
+    // Jump on the first fix or from far away; glide otherwise.
+    _from = cur != null && next != null && (cur.pos - next.pos).distance < 600
+        ? cur
+        : null;
+    _to = next;
+    // Runs even for a jump, so the layer repaints.
+    _move.forward(from: 0);
+  }
+
+  /// The dot as drawn right now.
+  LiveDot? get current {
+    final to = _to, from = _from;
+    if (to == null || from == null || _move.isCompleted) return to;
+    return LiveDot.lerp(from, to, _curve.value);
+  }
+
+  @override
+  void dispose() {
+    widget.placement.removeListener(_onFix);
+    _curve.dispose();
+    _move.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+    painter: LiveDotPainter(
+      dot: () => current,
+      repaint: Listenable.merge([widget.transform, _move]),
+      transform: widget.transform,
+    ),
+  );
+}
+
+/// What [LiveDotPainter] draws, in image px.
+@immutable
+class LiveDot {
+  const LiveDot(this.pos, this.radius, this.angle);
+  final Offset pos;
+  final double radius;
+  final double? angle;
+
+  static LiveDot? of(LivePlacement? p) =>
+      p == null || p.offMap ? null : LiveDot(p.pos, p.radiusPx, p.angle);
+
+  static LiveDot lerp(LiveDot a, LiveDot b, double t) {
+    double? angle = b.angle;
+    if (a.angle != null && b.angle != null) {
+      // Turn the short way round.
+      var d = (b.angle! - a.angle!) % (2 * math.pi);
+      if (d > math.pi) d -= 2 * math.pi;
+      angle = a.angle! + d * t;
+    }
+    return LiveDot(
+      Offset.lerp(a.pos, b.pos, t)!,
+      a.radius + (b.radius - a.radius) * t,
+      angle,
+    );
+  }
+}
+
+/// Blue dot with a white ring, a translucent accuracy circle and a heading
+/// cone. Sizes other than the accuracy circle stay constant on screen.
+class LiveDotPainter extends CustomPainter {
+  LiveDotPainter({
+    required this.dot,
+    required Listenable repaint,
+    required this.transform,
+  }) : super(repaint: repaint);
+
+  final LiveDot? Function() dot;
+  final TransformationController transform;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final d = dot();
+    if (d == null) return;
+    final m = transform.value.storage;
+    final s = math.sqrt(m[0] * m[0] + m[1] * m[1]).clamp(0.01, 100.0);
+    double px(double screen) => screen / s;
+
+    final ring = px(10), core = px(7);
+    if (d.radius > ring) {
+      canvas.drawCircle(
+        d.pos,
+        d.radius,
+        Paint()..color = Brand.neverBlue.withValues(alpha: 0.14),
+      );
+      canvas.drawCircle(
+        d.pos,
+        d.radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = px(1.5)
+          ..color = Brand.neverBlue.withValues(alpha: 0.45),
+      );
+    }
+    final a = d.angle;
+    if (a != null) {
+      final r = px(48);
+      const spread = math.pi / 5;
+      final cone = Path()
+        ..moveTo(d.pos.dx, d.pos.dy)
+        ..arcTo(
+          Rect.fromCircle(center: d.pos, radius: r),
+          a - spread,
+          spread * 2,
+          false,
+        )
+        ..close();
+      canvas.drawPath(
+        cone,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              Brand.neverBlue.withValues(alpha: 0.55),
+              Brand.neverBlue.withValues(alpha: 0),
+            ],
+          ).createShader(Rect.fromCircle(center: d.pos, radius: r)),
+      );
+    }
+    canvas.drawCircle(d.pos, ring, Paint()..color = Colors.white);
+    canvas.drawCircle(d.pos, core, Paint()..color = Brand.neverBlue);
+  }
+
+  @override
+  bool shouldRepaint(LiveDotPainter old) => old.transform != transform;
 }
 
 /// "Venue map: ..." credit line linking to the source.

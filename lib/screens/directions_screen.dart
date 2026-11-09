@@ -27,6 +27,7 @@ class DirectionsScreen extends StatelessWidget {
     required this.roomId,
     this.locate = currentLocation,
     this.positions = locationStream,
+    this.permitted = hasLocationPermission,
     this.outdoorLoader = loadOutdoorMap,
   });
   final String roomId;
@@ -36,6 +37,9 @@ class DirectionsScreen extends StatelessWidget {
 
   /// Live positions for off-site walking directions (injectable for tests).
   final LocationStreamProvider positions;
+
+  /// Permission check without a prompt, for the live dot on the venue map.
+  final LocationPermissionCheck permitted;
 
   /// Loads the street map for off-site venues (injectable for tests).
   final OutdoorLoader outdoorLoader;
@@ -62,6 +66,8 @@ class DirectionsScreen extends StatelessWidget {
             room: l.room,
             levelLabel: l.levelLabel,
             locate: locate,
+            positions: positions,
+            permitted: permitted,
           ),
         RoomLocation l => _TextDirections(location: l),
         OffsiteLocation o => OffsiteDirections(

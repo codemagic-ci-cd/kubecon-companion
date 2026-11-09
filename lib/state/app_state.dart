@@ -118,6 +118,7 @@ class AppState extends ChangeNotifier {
            : DetailsStatus.loaded {
     _saved.addAll(prefs?.getStringList(_kSaved) ?? const []);
     _reminded.addAll(prefs?.getStringList(_kReminded) ?? const []);
+    _muted.addAll(prefs?.getStringList(_kMuted) ?? const []);
     _notificationsEnabled = prefs?.getBool(_kNotify) ?? false;
     _themeMode = switch (prefs?.getString(_kTheme)) {
       'light' => ThemeMode.light,
@@ -136,6 +137,7 @@ class AppState extends ChangeNotifier {
 
   static const _kSaved = 'saved_sessions';
   static const _kReminded = 'reminded_sessions';
+  static const _kMuted = 'muted_sessions';
   static const _kNotify = 'notifications_enabled';
   static const _kTheme = 'theme_mode';
 
@@ -149,6 +151,9 @@ class AppState extends ChangeNotifier {
 
   final _saved = <String>{};
   final _reminded = <String>{};
+
+  /// Saved sessions whose (default-on) reminder the user turned off.
+  final _muted = <String>{};
   bool _notificationsEnabled = false;
   ThemeMode _themeMode = ThemeMode.dark;
   NotificationPermission _permission = NotificationPermission.notDetermined;
@@ -230,23 +235,52 @@ class AppState extends ChangeNotifier {
   bool isSaved(String id) => _saved.contains(id);
   bool isReminded(String id) => _reminded.contains(id);
 
-  void toggleSaved(String id) {
-    _saved.contains(id) ? _saved.remove(id) : _saved.add(id);
+  /// Saved sessions remind by default (unless muted); others only when the
+  /// user explicitly added a reminder.
+  bool isReminderOn(String id) =>
+      (_saved.contains(id) && !_muted.contains(id)) || _reminded.contains(id);
+
+  /// Saving turns its reminder on, so the first save asks for notification
+  /// permission in context.
+  Future<void> toggleSaved(String id) async {
+    final adding = !_saved.contains(id);
+    if (adding) {
+      _saved.add(id);
+    } else {
+      _saved.remove(id);
+      if (_muted.remove(id)) prefs?.setStringList(_kMuted, _muted.toList());
+    }
     prefs?.setStringList(_kSaved, _saved.toList());
     notifyListeners();
+    if (adding &&
+        (!_notificationsEnabled ||
+            _permission == NotificationPermission.notDetermined)) {
+      await setNotificationsEnabled(true);
+    }
     _scheduleSoon();
   }
 
   /// Returns true when the reminder is now on.
   Future<bool> toggleReminder(String id) async {
-    if (_reminded.remove(id)) {
-      prefs?.setStringList(_kReminded, _reminded.toList());
+    if (isReminderOn(id)) {
+      if (_saved.contains(id)) {
+        _muted.add(id);
+        prefs?.setStringList(_kMuted, _muted.toList());
+      }
+      if (_reminded.remove(id)) {
+        prefs?.setStringList(_kReminded, _reminded.toList());
+      }
       notifyListeners();
       _scheduleSoon();
       return false;
     }
-    _reminded.add(id);
-    prefs?.setStringList(_kReminded, _reminded.toList());
+    if (_saved.contains(id)) {
+      _muted.remove(id);
+      prefs?.setStringList(_kMuted, _muted.toList());
+    } else {
+      _reminded.add(id);
+      prefs?.setStringList(_kReminded, _reminded.toList());
+    }
     notifyListeners();
     if (!_notificationsEnabled ||
         _permission == NotificationPermission.notDetermined) {
@@ -280,6 +314,7 @@ class AppState extends ChangeNotifier {
     now: now,
     saved: _saved,
     reminded: _reminded,
+    muted: _muted,
     rawRoomNames: data.rawRoomNames,
   );
 

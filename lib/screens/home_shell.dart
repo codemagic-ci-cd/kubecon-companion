@@ -16,16 +16,17 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   late int _index = widget.initialTab;
 
-  static const _pages = [
-    ScheduleScreen(),
-    MapScreen(),
-    NowScreen(),
-    SavedScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: IndexedStack(index: _index, children: _pages),
+    body: IndexedStack(
+      index: _index,
+      children: [
+        const ScheduleScreen(),
+        MapScreen(active: _index == 1),
+        const NowScreen(),
+        const SavedScreen(),
+      ],
+    ),
     bottomNavigationBar: NavigationBar(
       selectedIndex: _index,
       onDestinationSelected: (i) => setState(() => _index = i),

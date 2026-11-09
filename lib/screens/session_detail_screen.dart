@@ -34,7 +34,7 @@ class SessionDetailScreen extends StatelessWidget {
     final b = context.brand;
     final loc = app.data.locate(s.roomId);
     final saved = app.isSaved(s.id);
-    final reminded = app.isReminded(s.id);
+    final reminded = app.isReminderOn(s.id);
     final started = !app.now.isBefore(s.start);
 
     return Scaffold(
@@ -114,6 +114,8 @@ class SessionDetailScreen extends StatelessWidget {
                       ? 'Already started'
                       : reminded
                       ? 'Reminder on'
+                      : saved
+                      ? 'Reminder off'
                       : 'Add reminder',
                   onPressed: started
                       ? null
@@ -128,7 +130,9 @@ class SessionDetailScreen extends StatelessWidget {
                             SnackBar(
                               content: Text(
                                 !on
-                                    ? 'Reminder removed.'
+                                    ? (saved
+                                          ? 'Reminder off. It stays in Saved.'
+                                          : 'Reminder removed.')
                                     : blocked
                                     ? 'Saved. Notifications are off for this browser, so look for it in the Now tab. ${app.notifications.platformNote}'
                                     : 'We will remind you 10 minutes before it starts.',
