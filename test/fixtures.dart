@@ -1,4 +1,5 @@
 import 'package:kubecon_companion/data/models.dart';
+import 'package:kubecon_companion/data/official_map.dart';
 
 /// Small, hand-written data set mirroring the shape of assets/data.
 final venueJson = <String, dynamic>{
@@ -222,3 +223,125 @@ final happeningsJson = <String, dynamic>{
 Venue testVenue() => Venue.fromJson(venueJson);
 ScheduleData testSchedule() => ScheduleData.fromJson(sessionsJson);
 List<Happening> testHappenings() => Happening.listFromJson(happeningsJson);
+
+/// A tiny annotated map in the shape of assets/data/official_map.json.
+final officialMapJson = <String, dynamic>{
+  'image': 'assets/maps/kcna26_venue_map.jpg',
+  'width': 1000,
+  'height': 1000,
+  'regions': [
+    {
+      'id': 'sp-L1',
+      'label': 'Salt Palace Level 1',
+      'building': 'Salt Palace',
+      'levelId': 'L1',
+      'rect': [0, 0, 600, 500],
+    },
+    {
+      'id': 'sp-L2',
+      'label': 'Salt Palace Level 2',
+      'building': 'Salt Palace',
+      'levelId': 'L2',
+      'rect': [0, 500, 600, 500],
+    },
+    {
+      'id': 'hy-L2',
+      'label': 'Hyatt Regency Level 2',
+      'building': 'Hyatt Regency',
+      'levelId': 'H2',
+      'rect': [600, 0, 400, 400],
+    },
+  ],
+  'rooms': {
+    'l1-hall-de': {'x': 100, 'y': 150, 'w': 150, 'h': 150, 'regionId': 'sp-L1'},
+    'l2-250': {'x': 120, 'y': 600, 'w': 100, 'h': 80, 'regionId': 'sp-L2'},
+  },
+  'nodes': [
+    {
+      'id': 'sp-entrance-200-south',
+      'x': 20,
+      'y': 100,
+      'regionId': 'sp-L1',
+      'kind': 'entrance',
+      'label': '200 South entrance',
+      'lat': 40.765,
+      'lng': -111.8957,
+    },
+    {
+      'id': 'sp-entrance-west-temple',
+      'x': 500,
+      'y': 100,
+      'regionId': 'sp-L1',
+      'kind': 'entrance',
+      'label': 'West Temple entrance',
+      'lat': 40.7661,
+      'lng': -111.8935,
+    },
+    {'id': 'j1', 'x': 100, 'y': 100, 'regionId': 'sp-L1', 'kind': 'junction'},
+    {
+      'id': 'door-l1-hall-de',
+      'x': 175,
+      'y': 140,
+      'regionId': 'sp-L1',
+      'kind': 'door',
+    },
+    {
+      'id': 'esc1',
+      'x': 300,
+      'y': 100,
+      'regionId': 'sp-L1',
+      'kind': 'escalator',
+    },
+    {
+      'id': 'lift1',
+      'x': 350,
+      'y': 100,
+      'regionId': 'sp-L1',
+      'kind': 'elevator',
+    },
+    {
+      'id': 'esc2',
+      'x': 300,
+      'y': 560,
+      'regionId': 'sp-L2',
+      'kind': 'escalator',
+    },
+    {
+      'id': 'lift2',
+      'x': 350,
+      'y': 560,
+      'regionId': 'sp-L2',
+      'kind': 'elevator',
+    },
+    {
+      'id': 'door-l2-250',
+      'x': 170,
+      'y': 590,
+      'regionId': 'sp-L2',
+      'kind': 'door',
+    },
+  ],
+  'edges': [
+    {
+      'from': 'sp-entrance-200-south',
+      'to': 'j1',
+      'kind': 'walk',
+      'hint': 'Pass Badge Pick-Up on your left',
+    },
+    {'from': 'j1', 'to': 'door-l1-hall-de', 'kind': 'walk'},
+    {'from': 'j1', 'to': 'esc1', 'kind': 'walk'},
+    {'from': 'esc1', 'to': 'lift1', 'kind': 'walk'},
+    {'from': 'lift1', 'to': 'sp-entrance-west-temple', 'kind': 'walk'},
+    {
+      'from': 'esc1',
+      'to': 'esc2',
+      'kind': 'escalator',
+      'hint': 'North Foyer escalators',
+    },
+    {'from': 'lift1', 'to': 'lift2', 'kind': 'elevator'},
+    {'from': 'esc2', 'to': 'lift2', 'kind': 'walk'},
+    {'from': 'esc2', 'to': 'door-l2-250', 'kind': 'walk'},
+  ],
+};
+
+OfficialMap testOfficialMap() => OfficialMap.fromJson(officialMapJson);

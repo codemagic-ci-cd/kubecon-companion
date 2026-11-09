@@ -1,0 +1,1504 @@
+{
+ "regions": [
+  {
+   "id": "hy-L5",
+   "label": "Hyatt Regency Level 5",
+   "building": "Hyatt Regency",
+   "levelId": "H5",
+   "rect": [
+    212,
+    945,
+    708,
+    148
+   ]
+  },
+  {
+   "id": "hy-L4",
+   "label": "Hyatt Regency Level 4",
+   "building": "Hyatt Regency",
+   "levelId": "H4",
+   "rect": [
+    215,
+    1150,
+    680,
+    470
+   ]
+  },
+  {
+   "id": "hy-L3",
+   "label": "Hyatt Regency Level 3",
+   "building": "Hyatt Regency",
+   "levelId": "H3",
+   "rect": [
+    218,
+    1680,
+    676,
+    300
+   ]
+  },
+  {
+   "id": "hy-L2",
+   "label": "Hyatt Regency Level 2",
+   "building": "Hyatt Regency",
+   "levelId": "H2",
+   "rect": [
+    200,
+    2040,
+    684,
+    545
+   ]
+  }
+ ],
+ "rooms": {
+  "hyatt-l5-zion": {
+   "x": 427,
+   "y": 958,
+   "w": 40,
+   "h": 36,
+   "regionId": "hy-L5",
+   "label": "Zion"
+  },
+  "hyatt-l5-bryce": {
+   "x": 467,
+   "y": 958,
+   "w": 55,
+   "h": 41,
+   "regionId": "hy-L5",
+   "label": "Bryce"
+  },
+  "hyatt-l5-canyonlands": {
+   "x": 522,
+   "y": 958,
+   "w": 58,
+   "h": 82,
+   "regionId": "hy-L5",
+   "label": "Canyonlands"
+  },
+  "hyatt-l5-arches": {
+   "x": 580,
+   "y": 958,
+   "w": 55,
+   "h": 77,
+   "regionId": "hy-L5",
+   "label": "Arches"
+  },
+  "hyatt-l5-capitol-reef": {
+   "x": 635,
+   "y": 958,
+   "w": 56,
+   "h": 72,
+   "regionId": "hy-L5",
+   "label": "Capitol Reef"
+  },
+  "hyatt-l4-traverse": {
+   "x": 221,
+   "y": 1479,
+   "w": 58,
+   "h": 135,
+   "regionId": "hy-L4",
+   "label": "Traverse"
+  },
+  "hyatt-l4-regency-ballroom-a": {
+   "x": 338,
+   "y": 1240,
+   "w": 154,
+   "h": 240,
+   "regionId": "hy-L4",
+   "label": "Regency Ballroom A"
+  },
+  "hyatt-l4-regency-ballroom-b": {
+   "x": 492,
+   "y": 1236,
+   "w": 140,
+   "h": 244,
+   "regionId": "hy-L4",
+   "label": "Regency Ballroom B"
+  },
+  "hyatt-l4-regency-ballroom-b-d": {
+   "x": 492,
+   "y": 1236,
+   "w": 286,
+   "h": 244,
+   "regionId": "hy-L4",
+   "label": "Regency Ballroom B-D"
+  },
+  "hyatt-l4-regency-ballroom-cd": {
+   "x": 632,
+   "y": 1236,
+   "w": 146,
+   "h": 244,
+   "regionId": "hy-L4",
+   "label": "Regency Ballroom CD"
+  },
+  "hyatt-l4-wasatch": {
+   "x": 702,
+   "y": 1564,
+   "w": 82,
+   "h": 48,
+   "regionId": "hy-L4",
+   "label": "Wasatch"
+  },
+  "hyatt-l4-broadcast-lounge": {
+   "x": 819,
+   "y": 1488,
+   "w": 67,
+   "h": 124,
+   "regionId": "hy-L4",
+   "label": "Broadcast Lounge"
+  },
+  "hyatt-l3-park-city": {
+   "x": 225,
+   "y": 1830,
+   "w": 65,
+   "h": 125,
+   "regionId": "hy-L3",
+   "label": "Park City"
+  },
+  "hyatt-l3-alta": {
+   "x": 467,
+   "y": 1780,
+   "w": 53,
+   "h": 78,
+   "regionId": "hy-L3",
+   "label": "Alta"
+  },
+  "hyatt-l3-snowbird": {
+   "x": 520,
+   "y": 1780,
+   "w": 53,
+   "h": 78,
+   "regionId": "hy-L3",
+   "label": "Snowbird"
+  },
+  "hyatt-l3-solitude": {
+   "x": 573,
+   "y": 1780,
+   "w": 54,
+   "h": 78,
+   "regionId": "hy-L3",
+   "label": "Solitude"
+  },
+  "hyatt-l3-brighton": {
+   "x": 627,
+   "y": 1780,
+   "w": 55,
+   "h": 78,
+   "regionId": "hy-L3",
+   "label": "Brighton"
+  },
+  "hyatt-l3-powder-mountain": {
+   "x": 706,
+   "y": 1780,
+   "w": 84,
+   "h": 50,
+   "regionId": "hy-L3",
+   "label": "Powder Mountain"
+  },
+  "hyatt-l3-woodward": {
+   "x": 703,
+   "y": 1920,
+   "w": 81,
+   "h": 48,
+   "regionId": "hy-L3",
+   "label": "Woodward"
+  },
+  "hyatt-l3-snowbasin": {
+   "x": 819,
+   "y": 1878,
+   "w": 67,
+   "h": 52,
+   "regionId": "hy-L3",
+   "label": "Snowbasin"
+  },
+  "hyatt-l3-deer-valley": {
+   "x": 819,
+   "y": 1930,
+   "w": 67,
+   "h": 38,
+   "regionId": "hy-L3",
+   "label": "Deer Valley"
+  },
+  "hyatt-l2-salt-lake-ballroom-a": {
+   "x": 405,
+   "y": 2227,
+   "w": 128,
+   "h": 95,
+   "regionId": "hy-L2",
+   "label": "Salt Lake Ballroom A"
+  },
+  "hyatt-l2-salt-lake-ballroom-b": {
+   "x": 405,
+   "y": 2135,
+   "w": 128,
+   "h": 92,
+   "regionId": "hy-L2",
+   "label": "Salt Lake Ballroom B"
+  },
+  "hyatt-l2-salt-lake-ballroom-c": {
+   "x": 533,
+   "y": 2135,
+   "w": 124,
+   "h": 187,
+   "regionId": "hy-L2",
+   "label": "Salt Lake Ballroom C"
+  },
+  "hyatt-l2-salt-lake-ballroom-de": {
+   "x": 657,
+   "y": 2135,
+   "w": 125,
+   "h": 187,
+   "regionId": "hy-L2",
+   "label": "Salt Lake Ballroom DE"
+  },
+  "hyatt-l2-the-nest": {
+   "x": 493,
+   "y": 2372,
+   "w": 87,
+   "h": 56,
+   "regionId": "hy-L2",
+   "label": "The Nest"
+  },
+  "hyatt-l2-aspen": {
+   "x": 205,
+   "y": 2370,
+   "w": 70,
+   "h": 130,
+   "regionId": "hy-L2",
+   "label": "Aspen"
+  },
+  "hyatt-l2-blue-spruce": {
+   "x": 697,
+   "y": 2458,
+   "w": 81,
+   "h": 47,
+   "regionId": "hy-L2",
+   "label": "Blue Spruce"
+  },
+  "hyatt-l2-juniper": {
+   "x": 813,
+   "y": 2415,
+   "w": 65,
+   "h": 48,
+   "regionId": "hy-L2",
+   "label": "Juniper"
+  },
+  "hyatt-l2-cottonwood": {
+   "x": 813,
+   "y": 2463,
+   "w": 65,
+   "h": 42,
+   "regionId": "hy-L2",
+   "label": "Cottonwood"
+  }
+ },
+ "nodes": [
+  {
+   "id": "door-hyatt-l5-zion",
+   "x": 447,
+   "y": 995,
+   "regionId": "hy-L5",
+   "kind": "door",
+   "label": "Zion entrance"
+  },
+  {
+   "id": "door-hyatt-l5-bryce",
+   "x": 495,
+   "y": 1000,
+   "regionId": "hy-L5",
+   "kind": "door",
+   "label": "Bryce entrance"
+  },
+  {
+   "id": "door-hyatt-l5-canyonlands",
+   "x": 551,
+   "y": 1041,
+   "regionId": "hy-L5",
+   "kind": "door",
+   "label": "Canyonlands entrance"
+  },
+  {
+   "id": "door-hyatt-l5-arches",
+   "x": 607,
+   "y": 1036,
+   "regionId": "hy-L5",
+   "kind": "door",
+   "label": "Arches entrance"
+  },
+  {
+   "id": "door-hyatt-l5-capitol-reef",
+   "x": 663,
+   "y": 1031,
+   "regionId": "hy-L5",
+   "kind": "door",
+   "label": "Capitol Reef entrance"
+  },
+  {
+   "id": "door-hyatt-l4-traverse",
+   "x": 280,
+   "y": 1530,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Traverse entrance"
+  },
+  {
+   "id": "door-hyatt-l4-regency-ballroom-a",
+   "x": 415,
+   "y": 1481,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Regency Ballroom A entrance"
+  },
+  {
+   "id": "door-hyatt-l4-regency-ballroom-b",
+   "x": 540,
+   "y": 1481,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Regency Ballroom B entrance"
+  },
+  {
+   "id": "door-hyatt-l4-regency-ballroom-b-d",
+   "x": 600,
+   "y": 1481,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Regency Ballroom B-D entrance"
+  },
+  {
+   "id": "door-hyatt-l4-regency-ballroom-cd",
+   "x": 665,
+   "y": 1481,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Regency Ballroom CD entrance"
+  },
+  {
+   "id": "door-hyatt-l4-wasatch",
+   "x": 743,
+   "y": 1564,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Wasatch entrance"
+  },
+  {
+   "id": "door-hyatt-l4-broadcast-lounge",
+   "x": 819,
+   "y": 1552,
+   "regionId": "hy-L4",
+   "kind": "door",
+   "label": "Broadcast Lounge entrance"
+  },
+  {
+   "id": "door-hyatt-l3-park-city",
+   "x": 291,
+   "y": 1893,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Park City entrance"
+  },
+  {
+   "id": "door-hyatt-l3-alta",
+   "x": 493,
+   "y": 1859,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Alta entrance"
+  },
+  {
+   "id": "door-hyatt-l3-snowbird",
+   "x": 547,
+   "y": 1859,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Snowbird entrance"
+  },
+  {
+   "id": "door-hyatt-l3-solitude",
+   "x": 600,
+   "y": 1859,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Solitude entrance"
+  },
+  {
+   "id": "door-hyatt-l3-brighton",
+   "x": 655,
+   "y": 1859,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Brighton entrance"
+  },
+  {
+   "id": "door-hyatt-l3-powder-mountain",
+   "x": 745,
+   "y": 1831,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Powder Mountain entrance"
+  },
+  {
+   "id": "door-hyatt-l3-woodward",
+   "x": 743,
+   "y": 1920,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Woodward entrance"
+  },
+  {
+   "id": "door-hyatt-l3-snowbasin",
+   "x": 819,
+   "y": 1903,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Snowbasin entrance"
+  },
+  {
+   "id": "door-hyatt-l3-deer-valley",
+   "x": 819,
+   "y": 1948,
+   "regionId": "hy-L3",
+   "kind": "door",
+   "label": "Deer Valley entrance"
+  },
+  {
+   "id": "door-hyatt-l2-salt-lake-ballroom-a",
+   "x": 405,
+   "y": 2275,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Salt Lake Ballroom A entrance"
+  },
+  {
+   "id": "door-hyatt-l2-salt-lake-ballroom-b",
+   "x": 405,
+   "y": 2180,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Salt Lake Ballroom B entrance"
+  },
+  {
+   "id": "door-hyatt-l2-salt-lake-ballroom-c",
+   "x": 595,
+   "y": 2322,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Salt Lake Ballroom C entrance"
+  },
+  {
+   "id": "door-hyatt-l2-salt-lake-ballroom-de",
+   "x": 720,
+   "y": 2322,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Salt Lake Ballroom DE entrance"
+  },
+  {
+   "id": "door-hyatt-l2-the-nest",
+   "x": 536,
+   "y": 2372,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "The Nest entrance"
+  },
+  {
+   "id": "door-hyatt-l2-aspen",
+   "x": 276,
+   "y": 2430,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Aspen entrance"
+  },
+  {
+   "id": "door-hyatt-l2-blue-spruce",
+   "x": 737,
+   "y": 2458,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Blue Spruce entrance"
+  },
+  {
+   "id": "door-hyatt-l2-juniper",
+   "x": 813,
+   "y": 2440,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Juniper entrance"
+  },
+  {
+   "id": "door-hyatt-l2-cottonwood",
+   "x": 813,
+   "y": 2484,
+   "regionId": "hy-L2",
+   "kind": "door",
+   "label": "Cottonwood entrance"
+  },
+  {
+   "id": "hy-L5-elevators",
+   "x": 416,
+   "y": 1040,
+   "regionId": "hy-L5",
+   "kind": "elevator",
+   "label": "Level 5 elevator lobby"
+  },
+  {
+   "id": "hy-L5-j-lobby",
+   "x": 416,
+   "y": 1005,
+   "regionId": "hy-L5",
+   "kind": "junction",
+   "label": "Elevator lobby"
+  },
+  {
+   "id": "hy-L5-j-bryce",
+   "x": 495,
+   "y": 1015,
+   "regionId": "hy-L5",
+   "kind": "junction",
+   "label": "Corridor outside Bryce"
+  },
+  {
+   "id": "hy-L5-j-under",
+   "x": 500,
+   "y": 1058,
+   "regionId": "hy-L5",
+   "kind": "junction",
+   "label": "Level 5 corridor"
+  },
+  {
+   "id": "hy-L5-j-canyon",
+   "x": 551,
+   "y": 1058,
+   "regionId": "hy-L5",
+   "kind": "junction",
+   "label": "Corridor outside Canyonlands"
+  },
+  {
+   "id": "hy-L5-j-arches",
+   "x": 607,
+   "y": 1053,
+   "regionId": "hy-L5",
+   "kind": "junction",
+   "label": "Corridor outside Arches"
+  },
+  {
+   "id": "hy-L5-j-reef",
+   "x": 663,
+   "y": 1048,
+   "regionId": "hy-L5",
+   "kind": "junction",
+   "label": "Corridor outside Capitol Reef"
+  },
+  {
+   "id": "hy-L5-stairs",
+   "x": 345,
+   "y": 1030,
+   "regionId": "hy-L5",
+   "kind": "stairs",
+   "label": "Stairs"
+  },
+  {
+   "id": "hy-L4-elevators",
+   "x": 416,
+   "y": 1560,
+   "regionId": "hy-L4",
+   "kind": "elevator",
+   "label": "Level 4 elevator lobby"
+  },
+  {
+   "id": "hy-L4-j-lobby",
+   "x": 416,
+   "y": 1510,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "Elevator lobby"
+  },
+  {
+   "id": "hy-L4-j-west",
+   "x": 300,
+   "y": 1525,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "West end of elevator lobby"
+  },
+  {
+   "id": "hy-L4-stairs",
+   "x": 340,
+   "y": 1560,
+   "regionId": "hy-L4",
+   "kind": "stairs",
+   "label": "Stairs"
+  },
+  {
+   "id": "hy-L4-j-south",
+   "x": 530,
+   "y": 1505,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "Regency Foyer South"
+  },
+  {
+   "id": "hy-L4-j-mid",
+   "x": 600,
+   "y": 1505,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "Regency Foyer"
+  },
+  {
+   "id": "hy-L4-j-north",
+   "x": 665,
+   "y": 1505,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "Regency Foyer North"
+  },
+  {
+   "id": "hy-L4-escalator",
+   "x": 571,
+   "y": 1582,
+   "regionId": "hy-L4",
+   "kind": "escalator",
+   "label": "Escalator"
+  },
+  {
+   "id": "hy-L4-j-ne",
+   "x": 690,
+   "y": 1552,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "North end of Regency Foyer"
+  },
+  {
+   "id": "hy-L4-j-wasatch",
+   "x": 743,
+   "y": 1552,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "Outside Wasatch"
+  },
+  {
+   "id": "hy-L4-elevators-north",
+   "x": 750,
+   "y": 1530,
+   "regionId": "hy-L4",
+   "kind": "elevator",
+   "label": "North elevators"
+  },
+  {
+   "id": "hy-L4-j-broadcast",
+   "x": 802,
+   "y": 1552,
+   "regionId": "hy-L4",
+   "kind": "junction",
+   "label": "Outside Broadcast Lounge"
+  },
+  {
+   "id": "hy-L3-elevators",
+   "x": 420,
+   "y": 1895,
+   "regionId": "hy-L3",
+   "kind": "elevator",
+   "label": "Level 3 elevator lobby"
+  },
+  {
+   "id": "hy-L3-j-lobby",
+   "x": 420,
+   "y": 1872,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Elevator lobby"
+  },
+  {
+   "id": "hy-L3-j-west",
+   "x": 305,
+   "y": 1890,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "West end of elevator lobby"
+  },
+  {
+   "id": "hy-L3-stairs",
+   "x": 345,
+   "y": 1912,
+   "regionId": "hy-L3",
+   "kind": "stairs",
+   "label": "Stairs"
+  },
+  {
+   "id": "hy-L3-j-alta",
+   "x": 493,
+   "y": 1872,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Corridor outside Alta"
+  },
+  {
+   "id": "hy-L3-j-snowbird",
+   "x": 547,
+   "y": 1872,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Corridor outside Snowbird"
+  },
+  {
+   "id": "hy-L3-j-solitude",
+   "x": 600,
+   "y": 1872,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Corridor outside Solitude"
+  },
+  {
+   "id": "hy-L3-j-brighton",
+   "x": 655,
+   "y": 1872,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Corridor outside Brighton"
+  },
+  {
+   "id": "hy-L3-escalator",
+   "x": 570,
+   "y": 1915,
+   "regionId": "hy-L3",
+   "kind": "escalator",
+   "label": "Escalator"
+  },
+  {
+   "id": "hy-L3-j-east",
+   "x": 695,
+   "y": 1872,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "East end of corridor"
+  },
+  {
+   "id": "hy-L3-j-ne",
+   "x": 745,
+   "y": 1850,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "North elevator lobby"
+  },
+  {
+   "id": "hy-L3-elevators-north",
+   "x": 732,
+   "y": 1866,
+   "regionId": "hy-L3",
+   "kind": "elevator",
+   "label": "North elevators"
+  },
+  {
+   "id": "hy-L3-j-e2",
+   "x": 745,
+   "y": 1903,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Outside Woodward"
+  },
+  {
+   "id": "hy-L3-j-se",
+   "x": 802,
+   "y": 1903,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Outside Snowbasin"
+  },
+  {
+   "id": "hy-L3-j-se2",
+   "x": 802,
+   "y": 1948,
+   "regionId": "hy-L3",
+   "kind": "junction",
+   "label": "Outside Deer Valley"
+  },
+  {
+   "id": "hy-L2-elevators",
+   "x": 407,
+   "y": 2455,
+   "regionId": "hy-L2",
+   "kind": "elevator",
+   "label": "Level 2 elevator lobby"
+  },
+  {
+   "id": "hy-L2-j-lobby",
+   "x": 407,
+   "y": 2420,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Elevator lobby"
+  },
+  {
+   "id": "hy-L2-j-aspen",
+   "x": 300,
+   "y": 2425,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "West end of elevator lobby"
+  },
+  {
+   "id": "hy-L2-stairs",
+   "x": 335,
+   "y": 2450,
+   "regionId": "hy-L2",
+   "kind": "stairs",
+   "label": "Stairs"
+  },
+  {
+   "id": "hy-L2-j-fs",
+   "x": 385,
+   "y": 2345,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer South"
+  },
+  {
+   "id": "hy-L2-j-fs-a",
+   "x": 385,
+   "y": 2275,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer South, outside Ballroom A"
+  },
+  {
+   "id": "hy-L2-j-fs-b",
+   "x": 385,
+   "y": 2180,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer South, outside Ballroom B"
+  },
+  {
+   "id": "hy-L2-j-fw",
+   "x": 536,
+   "y": 2345,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer West"
+  },
+  {
+   "id": "hy-L2-j-c",
+   "x": 595,
+   "y": 2345,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer West, outside Ballroom C"
+  },
+  {
+   "id": "hy-L2-j-de",
+   "x": 720,
+   "y": 2345,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer West, outside Ballroom DE"
+  },
+  {
+   "id": "hy-L2-escalator-west",
+   "x": 637,
+   "y": 2398,
+   "regionId": "hy-L2",
+   "kind": "escalator",
+   "label": "Escalator up (Salt Lake Foyer West)"
+  },
+  {
+   "id": "hy-L2-j-e1",
+   "x": 690,
+   "y": 2380,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "North elevators"
+  },
+  {
+   "id": "hy-L2-elevators-north",
+   "x": 728,
+   "y": 2405,
+   "regionId": "hy-L2",
+   "kind": "elevator",
+   "label": "North elevators"
+  },
+  {
+   "id": "hy-L2-j-fe",
+   "x": 560,
+   "y": 2455,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer East"
+  },
+  {
+   "id": "hy-L2-escalator-east",
+   "x": 535,
+   "y": 2480,
+   "regionId": "hy-L2",
+   "kind": "escalator",
+   "label": "Escalator down to lobby (Salt Lake Foyer East)"
+  },
+  {
+   "id": "hy-L2-j-e2",
+   "x": 690,
+   "y": 2445,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Salt Lake Foyer East"
+  },
+  {
+   "id": "hy-L2-j-bs",
+   "x": 737,
+   "y": 2445,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Outside Blue Spruce"
+  },
+  {
+   "id": "hy-L2-j-jun",
+   "x": 797,
+   "y": 2440,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Outside Juniper"
+  },
+  {
+   "id": "hy-L2-j-cot",
+   "x": 797,
+   "y": 2484,
+   "regionId": "hy-L2",
+   "kind": "junction",
+   "label": "Outside Cottonwood"
+  }
+ ],
+ "edges": [
+  {
+   "from": "hy-L5-elevators",
+   "to": "hy-L5-j-lobby",
+   "kind": "walk",
+   "hint": "Step out into the Level 5 elevator lobby"
+  },
+  {
+   "from": "hy-L5-j-lobby",
+   "to": "hy-L5-stairs",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L5-j-lobby",
+   "to": "door-hyatt-l5-zion",
+   "kind": "walk",
+   "hint": "Zion (prayer room) is just ahead, the green room by the elevator lobby"
+  },
+  {
+   "from": "hy-L5-j-lobby",
+   "to": "hy-L5-j-bryce",
+   "kind": "walk",
+   "hint": "Walk east past Zion"
+  },
+  {
+   "from": "hy-L5-j-bryce",
+   "to": "door-hyatt-l5-bryce",
+   "kind": "walk",
+   "hint": "Bryce is on your left, next to Zion"
+  },
+  {
+   "from": "hy-L5-j-bryce",
+   "to": "hy-L5-j-under",
+   "kind": "walk",
+   "hint": "Follow the corridor around the meeting rooms"
+  },
+  {
+   "from": "hy-L5-j-under",
+   "to": "hy-L5-j-canyon",
+   "kind": "walk",
+   "hint": "Keep the meeting rooms on your left"
+  },
+  {
+   "from": "hy-L5-j-canyon",
+   "to": "door-hyatt-l5-canyonlands",
+   "kind": "walk",
+   "hint": "Canyonlands is on your left"
+  },
+  {
+   "from": "hy-L5-j-canyon",
+   "to": "hy-L5-j-arches",
+   "kind": "walk",
+   "hint": "Continue east along the corridor"
+  },
+  {
+   "from": "hy-L5-j-arches",
+   "to": "door-hyatt-l5-arches",
+   "kind": "walk",
+   "hint": "Arches is on your left"
+  },
+  {
+   "from": "hy-L5-j-arches",
+   "to": "hy-L5-j-reef",
+   "kind": "walk",
+   "hint": "Continue to the end of the meeting rooms"
+  },
+  {
+   "from": "hy-L5-j-reef",
+   "to": "door-hyatt-l5-capitol-reef",
+   "kind": "walk",
+   "hint": "Capitol Reef is the last room on your left"
+  },
+  {
+   "from": "hy-L4-elevators",
+   "to": "hy-L4-j-lobby",
+   "kind": "walk",
+   "hint": "Step out into the Level 4 elevator lobby"
+  },
+  {
+   "from": "hy-L4-j-lobby",
+   "to": "hy-L4-stairs",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L4-j-lobby",
+   "to": "hy-L4-j-west",
+   "kind": "walk",
+   "hint": "Turn west, away from the Regency Foyer"
+  },
+  {
+   "from": "hy-L4-j-west",
+   "to": "door-hyatt-l4-traverse",
+   "kind": "walk",
+   "hint": "Traverse is at the west end of the corridor"
+  },
+  {
+   "from": "hy-L4-j-lobby",
+   "to": "door-hyatt-l4-regency-ballroom-a",
+   "kind": "walk",
+   "hint": "Regency Ballroom A doors face the elevator lobby"
+  },
+  {
+   "from": "hy-L4-j-lobby",
+   "to": "hy-L4-j-south",
+   "kind": "walk",
+   "hint": "Walk east into the Regency Foyer South"
+  },
+  {
+   "from": "hy-L4-j-south",
+   "to": "door-hyatt-l4-regency-ballroom-b",
+   "kind": "walk",
+   "hint": "Regency Ballroom B is on your left off the Regency Foyer South"
+  },
+  {
+   "from": "hy-L4-j-south",
+   "to": "hy-L4-j-mid",
+   "kind": "walk",
+   "hint": "Continue through the Regency Foyer, escalator on your right"
+  },
+  {
+   "from": "hy-L4-j-mid",
+   "to": "door-hyatt-l4-regency-ballroom-b-d",
+   "kind": "walk",
+   "hint": "Regency Ballroom B-D doors are on your left"
+  },
+  {
+   "from": "hy-L4-j-mid",
+   "to": "hy-L4-escalator",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L4-j-mid",
+   "to": "hy-L4-j-north",
+   "kind": "walk",
+   "hint": "Continue into the Regency Foyer North"
+  },
+  {
+   "from": "hy-L4-j-north",
+   "to": "door-hyatt-l4-regency-ballroom-cd",
+   "kind": "walk",
+   "hint": "Regency Ballroom CD is on your left off the Regency Foyer North"
+  },
+  {
+   "from": "hy-L4-j-north",
+   "to": "hy-L4-j-ne",
+   "kind": "walk",
+   "hint": "Head to the north end of the foyer"
+  },
+  {
+   "from": "hy-L4-j-ne",
+   "to": "hy-L4-j-wasatch",
+   "kind": "walk",
+   "hint": "Pass the north elevators on your left"
+  },
+  {
+   "from": "hy-L4-j-wasatch",
+   "to": "door-hyatt-l4-wasatch",
+   "kind": "walk",
+   "hint": "Wasatch is on your right"
+  },
+  {
+   "from": "hy-L4-j-wasatch",
+   "to": "hy-L4-elevators-north",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L4-j-wasatch",
+   "to": "hy-L4-j-broadcast",
+   "kind": "walk",
+   "hint": "Continue past Wasatch"
+  },
+  {
+   "from": "hy-L4-j-broadcast",
+   "to": "door-hyatt-l4-broadcast-lounge",
+   "kind": "walk",
+   "hint": "The Broadcast Lounge is straight ahead at the end"
+  },
+  {
+   "from": "hy-L3-elevators",
+   "to": "hy-L3-j-lobby",
+   "kind": "walk",
+   "hint": "Step out into the Level 3 elevator lobby"
+  },
+  {
+   "from": "hy-L3-j-lobby",
+   "to": "hy-L3-j-west",
+   "kind": "walk",
+   "hint": "Turn west, away from the meeting rooms"
+  },
+  {
+   "from": "hy-L3-j-west",
+   "to": "door-hyatt-l3-park-city",
+   "kind": "walk",
+   "hint": "Park City is at the west end of the corridor"
+  },
+  {
+   "from": "hy-L3-j-west",
+   "to": "hy-L3-stairs",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L3-j-lobby",
+   "to": "hy-L3-j-alta",
+   "kind": "walk",
+   "hint": "Walk east along the corridor"
+  },
+  {
+   "from": "hy-L3-j-alta",
+   "to": "door-hyatt-l3-alta",
+   "kind": "walk",
+   "hint": "Alta is on your left"
+  },
+  {
+   "from": "hy-L3-j-alta",
+   "to": "hy-L3-j-snowbird",
+   "kind": "walk",
+   "hint": "Continue east along the row of meeting rooms"
+  },
+  {
+   "from": "hy-L3-j-snowbird",
+   "to": "door-hyatt-l3-snowbird",
+   "kind": "walk",
+   "hint": "Snowbird is on your left"
+  },
+  {
+   "from": "hy-L3-j-snowbird",
+   "to": "hy-L3-j-solitude",
+   "kind": "walk",
+   "hint": "Continue east along the row of meeting rooms"
+  },
+  {
+   "from": "hy-L3-j-solitude",
+   "to": "door-hyatt-l3-solitude",
+   "kind": "walk",
+   "hint": "Solitude is on your left"
+  },
+  {
+   "from": "hy-L3-j-solitude",
+   "to": "hy-L3-j-brighton",
+   "kind": "walk",
+   "hint": "Continue east along the row of meeting rooms"
+  },
+  {
+   "from": "hy-L3-j-brighton",
+   "to": "door-hyatt-l3-brighton",
+   "kind": "walk",
+   "hint": "Brighton is on your left"
+  },
+  {
+   "from": "hy-L3-j-solitude",
+   "to": "hy-L3-escalator",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L3-j-brighton",
+   "to": "hy-L3-j-east",
+   "kind": "walk",
+   "hint": "Continue past Brighton"
+  },
+  {
+   "from": "hy-L3-j-east",
+   "to": "hy-L3-j-ne",
+   "kind": "walk",
+   "hint": "Turn left toward the north elevators"
+  },
+  {
+   "from": "hy-L3-j-ne",
+   "to": "door-hyatt-l3-powder-mountain",
+   "kind": "walk",
+   "hint": "Powder Mountain is straight ahead"
+  },
+  {
+   "from": "hy-L3-j-ne",
+   "to": "hy-L3-elevators-north",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L3-j-east",
+   "to": "hy-L3-j-e2",
+   "kind": "walk",
+   "hint": "Head to the southeast corner, north elevators on your left"
+  },
+  {
+   "from": "hy-L3-j-e2",
+   "to": "door-hyatt-l3-woodward",
+   "kind": "walk",
+   "hint": "Woodward is on your right"
+  },
+  {
+   "from": "hy-L3-j-e2",
+   "to": "hy-L3-j-se",
+   "kind": "walk",
+   "hint": "Continue east past Woodward"
+  },
+  {
+   "from": "hy-L3-j-se",
+   "to": "door-hyatt-l3-snowbasin",
+   "kind": "walk",
+   "hint": "Snowbasin is straight ahead"
+  },
+  {
+   "from": "hy-L3-j-se",
+   "to": "hy-L3-j-se2",
+   "kind": "walk",
+   "hint": "Turn right along the end rooms"
+  },
+  {
+   "from": "hy-L3-j-se2",
+   "to": "door-hyatt-l3-deer-valley",
+   "kind": "walk",
+   "hint": "Deer Valley is on your left, next to Snowbasin"
+  },
+  {
+   "from": "hy-L2-elevators",
+   "to": "hy-L2-j-lobby",
+   "kind": "walk",
+   "hint": "Step out into the Level 2 elevator lobby"
+  },
+  {
+   "from": "hy-L2-j-lobby",
+   "to": "hy-L2-j-aspen",
+   "kind": "walk",
+   "hint": "Turn west, away from the ballrooms"
+  },
+  {
+   "from": "hy-L2-j-aspen",
+   "to": "door-hyatt-l2-aspen",
+   "kind": "walk",
+   "hint": "Aspen is at the west end of the corridor"
+  },
+  {
+   "from": "hy-L2-j-lobby",
+   "to": "hy-L2-stairs",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L2-j-lobby",
+   "to": "hy-L2-j-fs",
+   "kind": "walk",
+   "hint": "Walk north into the Salt Lake Foyer South"
+  },
+  {
+   "from": "hy-L2-j-fs",
+   "to": "hy-L2-j-fs-a",
+   "kind": "walk",
+   "hint": "Walk up the Salt Lake Foyer South"
+  },
+  {
+   "from": "hy-L2-j-fs-a",
+   "to": "door-hyatt-l2-salt-lake-ballroom-a",
+   "kind": "walk",
+   "hint": "Salt Lake Ballroom A is on your right"
+  },
+  {
+   "from": "hy-L2-j-fs-a",
+   "to": "hy-L2-j-fs-b",
+   "kind": "walk",
+   "hint": "Continue past Ballroom A to the end of the foyer"
+  },
+  {
+   "from": "hy-L2-j-fs-b",
+   "to": "door-hyatt-l2-salt-lake-ballroom-b",
+   "kind": "walk",
+   "hint": "Salt Lake Ballroom B is on your right"
+  },
+  {
+   "from": "hy-L2-j-fs",
+   "to": "hy-L2-j-fw",
+   "kind": "walk",
+   "hint": "Walk east into the Salt Lake Foyer West, ballrooms on your left"
+  },
+  {
+   "from": "hy-L2-j-fw",
+   "to": "door-hyatt-l2-the-nest",
+   "kind": "walk",
+   "hint": "The Nest is on your right"
+  },
+  {
+   "from": "hy-L2-j-fw",
+   "to": "hy-L2-j-c",
+   "kind": "walk",
+   "hint": "Continue east along the Salt Lake Foyer West"
+  },
+  {
+   "from": "hy-L2-j-c",
+   "to": "door-hyatt-l2-salt-lake-ballroom-c",
+   "kind": "walk",
+   "hint": "Salt Lake Ballroom C is on your left"
+  },
+  {
+   "from": "hy-L2-j-c",
+   "to": "hy-L2-j-de",
+   "kind": "walk",
+   "hint": "Continue past Ballroom C"
+  },
+  {
+   "from": "hy-L2-j-de",
+   "to": "door-hyatt-l2-salt-lake-ballroom-de",
+   "kind": "walk",
+   "hint": "Salt Lake Ballroom DE is on your left"
+  },
+  {
+   "from": "hy-L2-j-c",
+   "to": "hy-L2-escalator-west",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L2-j-de",
+   "to": "hy-L2-j-e1",
+   "kind": "walk",
+   "hint": "Head toward the north elevators"
+  },
+  {
+   "from": "hy-L2-j-e1",
+   "to": "hy-L2-elevators-north",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L2-j-e1",
+   "to": "hy-L2-j-e2",
+   "kind": "walk",
+   "hint": "Walk past the north elevators on your left"
+  },
+  {
+   "from": "hy-L2-escalator-west",
+   "to": "hy-L2-j-e1",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L2-j-lobby",
+   "to": "hy-L2-j-fe",
+   "kind": "walk",
+   "hint": "Walk east into the Salt Lake Foyer East, The Nest on your left"
+  },
+  {
+   "from": "hy-L2-j-fe",
+   "to": "hy-L2-escalator-east",
+   "kind": "walk",
+   "hint": null
+  },
+  {
+   "from": "hy-L2-j-fe",
+   "to": "hy-L2-j-e2",
+   "kind": "walk",
+   "hint": "Continue east through the Salt Lake Foyer East"
+  },
+  {
+   "from": "hy-L2-j-e2",
+   "to": "hy-L2-j-bs",
+   "kind": "walk",
+   "hint": "Continue east"
+  },
+  {
+   "from": "hy-L2-j-bs",
+   "to": "door-hyatt-l2-blue-spruce",
+   "kind": "walk",
+   "hint": "Blue Spruce is on your right"
+  },
+  {
+   "from": "hy-L2-j-bs",
+   "to": "hy-L2-j-jun",
+   "kind": "walk",
+   "hint": "Continue past Blue Spruce to the end"
+  },
+  {
+   "from": "hy-L2-j-jun",
+   "to": "door-hyatt-l2-juniper",
+   "kind": "walk",
+   "hint": "Juniper is straight ahead"
+  },
+  {
+   "from": "hy-L2-j-jun",
+   "to": "hy-L2-j-cot",
+   "kind": "walk",
+   "hint": "Turn right"
+  },
+  {
+   "from": "hy-L2-j-cot",
+   "to": "door-hyatt-l2-cottonwood",
+   "kind": "walk",
+   "hint": "Cottonwood is on your left, next to Juniper"
+  },
+  {
+   "from": "sp-hyatt-lobby-elevators",
+   "to": "hy-L2-elevators",
+   "kind": "elevator",
+   "hint": "Take the Hyatt Regency elevators up to Level 2"
+  },
+  {
+   "from": "sp-hyatt-lobby-elevators",
+   "to": "hy-L3-elevators",
+   "kind": "elevator",
+   "hint": "Take the Hyatt Regency elevators up to Level 3"
+  },
+  {
+   "from": "sp-hyatt-lobby-elevators",
+   "to": "hy-L4-elevators",
+   "kind": "elevator",
+   "hint": "Take the Hyatt Regency elevators up to Level 4"
+  },
+  {
+   "from": "sp-hyatt-lobby-elevators",
+   "to": "hy-L5-elevators",
+   "kind": "elevator",
+   "hint": "Take the Hyatt Regency elevators up to Level 5"
+  },
+  {
+   "from": "sp-hyatt-lobby-elevators",
+   "to": "hy-L2-escalator-east",
+   "kind": "escalator",
+   "hint": "Take the escalator up to Hyatt Level 2 (Salt Lake Foyer East)"
+  },
+  {
+   "from": "hy-L2-escalator-west",
+   "to": "hy-L3-escalator",
+   "kind": "escalator",
+   "hint": "Take the escalator from the Salt Lake Foyer West up to Level 3"
+  },
+  {
+   "from": "hy-L3-escalator",
+   "to": "hy-L4-escalator",
+   "kind": "escalator",
+   "hint": "Take the escalator up to Level 4 (Regency Foyer)"
+  }
+ ]
+}

@@ -1,119 +1,75 @@
 import 'package:flutter/material.dart';
 
-import '../data/directions.dart';
 import '../data/models.dart';
+import '../data/official_map.dart';
 import '../state/app_scope.dart';
+import '../state/app_state.dart';
 import '../theme/brand.dart';
 import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
+import '../widgets/official_map_view.dart';
 import '../widgets/session_tile.dart';
-import '../widgets/venue_map.dart';
 import 'directions_screen.dart';
 
-/// Indoor venue map. As a tab it browses freely; pushed with [focusRoomId]
-/// it highlights that room and draws the suggested route per level.
+/// The official venue map with our room boxes: pan, zoom, jump to a panel,
+/// tap a room for what's on there and directions.
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key, this.focusRoomId});
-  final String? focusRoomId;
+  const MapScreen({super.key});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final _mapKey = GlobalKey<VenueMapViewState>();
-  String? _levelId;
+  final _mapKey = GlobalKey<OfficialMapViewState>();
   String? _selectedRoomId;
+  String? _regionId = 'sp-L1';
 
-  @override
-  void initState() {
-    super.initState();
-    final venue = AppScope.read(context).data.venue;
-    final focus = venue.room(widget.focusRoomId);
-    _selectedRoomId = focus?.id;
-    _levelId =
-        focus?.levelId ?? (venue.levels.isEmpty ? null : venue.levels.first.id);
+  void _goToRegion(MapRegion r) {
+    setState(() => _regionId = r.id);
+    _mapKey.currentState?.animateTo(r.rect, padding: 8);
   }
 
-  void _selectRoom(Room room) {
+  void _fitAll() {
+    setState(() => _regionId = null);
+    _mapKey.currentState?.fit();
+  }
+
+  void _selectRoom(Room room, {bool moveCamera = false}) {
+    final map = AppScope.read(context).data.officialMap;
+    final geo = map?.room(room.id, partOf: room.partOf);
     setState(() {
       _selectedRoomId = room.id;
-      _levelId = room.levelId;
+      if (geo != null) _regionId = geo.regionId;
     });
+    if (geo != null) {
+      // Keep the room in view above the room sheet (about half the map).
+      _mapKey.currentState?.animateTo(
+        geo.rect.inflate(moveCamera ? 220 : 160),
+        bottomFraction: 0.5,
+      );
+    }
     _showRoomSheet(room);
   }
 
   void _showRoomSheet(Room room) {
     final app = AppScope.read(context);
-    final now = app.now;
-    final upcoming = app.data.sessions
-        .where((s) => s.roomId == room.id && s.end.isAfter(now))
-        .take(4)
-        .toList();
-    final level = app.data.venue.level(room.levelId);
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) => AppScope(
         state: app,
-        child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: upcoming.isEmpty ? 0.35 : 0.6,
-          maxChildSize: 0.9,
-          builder: (context, scroll) => ListView(
-            controller: scroll,
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      room.name,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        room.building,
-                        level?.name,
-                      ].whereType<String>().toSet().join(' · '),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    if (room.note != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        room.note!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PrimaryButton(
-                        icon: Icons.directions,
-                        label: 'Step-by-step directions',
-                        onPressed: () {
-                          Navigator.pop(sheetContext);
-                          Navigator.of(this.context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => DirectionsScreen(roomId: room.id),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+        child: RoomSheet(
+          room: room,
+          onDirections: () {
+            Navigator.pop(sheetContext);
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => DirectionsScreen(roomId: room.id),
               ),
-              if (upcoming.isNotEmpty) ...[
-                const SectionTitle('Coming up here'),
-                for (final s in upcoming)
-                  SessionTile(session: s, showDay: true),
-              ],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -123,31 +79,18 @@ class _MapScreenState extends State<MapScreen> {
     final app = AppScope.read(context);
     final room = await showSearch<Room?>(
       context: context,
-      delegate: _RoomSearch(app.data.venue),
+      delegate: RoomSearchDelegate(app.data.venue),
     );
-    if (room != null && mounted) {
-      setState(() {
-        _selectedRoomId = room.id;
-        _levelId = room.levelId;
-      });
-    }
+    if (room != null && mounted) _selectRoom(room, moveCamera: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
+    final map = app.data.officialMap;
     final venue = app.data.venue;
-    final b = context.brand;
-    final text = Theme.of(context).textTheme;
-    final focusRoom = venue.room(widget.focusRoomId);
-    final route = focusRoom == null
-        ? const <RouteLeg>[]
-        : planRoute(venue, focusRoom);
-    final levelId = _levelId;
-    final level = levelId == null ? null : venue.level(levelId);
-    final routeLevels = route.map((l) => l.levelId).toList();
 
-    if (venue.levels.isEmpty || levelId == null) {
+    if (map == null) {
       return Scaffold(
         appBar: AppBar(title: const AppBarTitle()),
         body: const EmptyState(
@@ -157,133 +100,142 @@ class _MapScreenState extends State<MapScreen> {
         ),
       );
     }
+    final selected = venue.room(_selectedRoomId);
+    final selectedGeo = selected == null
+        ? null
+        : map.room(selected.id, partOf: selected.partOf);
 
     return Scaffold(
       appBar: AppBar(
-        title: focusRoom == null
-            ? const AppBarTitle()
-            : Text('Route to ${shortRoomLabel(focusRoom.name)}'),
+        title: const AppBarTitle(),
         actions: [
           IconButton(
             tooltip: 'Find a room',
             icon: const Icon(Icons.search),
             onPressed: _searchRooms,
           ),
-          if (focusRoom == null) const SettingsAction(),
+          const SettingsAction(),
         ],
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                for (final l in venue.levels)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(l.shortName),
-                      selected: l.id == levelId,
-                      showCheckmark: false,
-                      avatar: routeLevels.contains(l.id)
-                          ? Icon(
-                              Icons.route,
-                              size: 16,
-                              color: l.id == levelId
-                                  ? Colors.white
-                                  : Brand.swwYellow,
-                            )
-                          : null,
-                      labelStyle: text.labelLarge?.copyWith(
-                        color: l.id == levelId ? Colors.white : b.heading,
-                      ),
-                      onSelected: (_) => setState(() => _levelId = l.id),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    level?.description ?? level?.name ?? '',
-                    style: text.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          RegionChips(map: map, selectedId: _regionId, onSelected: _goToRegion),
           Expanded(
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: VenueMapView(
-                    key: _mapKey,
-                    venue: venue,
-                    levelId: levelId,
-                    highlightRoomId: _selectedRoomId,
-                    route: route,
-                    onRoomTap: _selectRoom,
-                    onLandmarkTap: (l) => ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(SnackBar(content: Text(l.name))),
+                  child: ColoredBox(
+                    color: Colors.white,
+                    child: OfficialMapView(
+                      key: _mapKey,
+                      map: map,
+                      // Open on the main Salt Palace floor: the whole poster is tiny on a phone.
+                      initialFocus: map.region('sp-L1')?.rect,
+                      selectedRoomId: selectedGeo?.id,
+                      onRoomTap: (id) {
+                        final room = venue.room(id);
+                        if (room != null) _selectRoom(room);
+                      },
+                    ),
                   ),
                 ),
                 Positioned(
                   right: 12,
-                  top: 8,
-                  child: Column(
-                    children: [
-                      _MapButton(
-                        tooltip: 'Reset zoom',
-                        icon: Icons.fit_screen_outlined,
-                        onPressed: () => _mapKey.currentState?.resetView(),
-                      ),
-                      const SizedBox(height: 8),
-                      const _Compass(),
-                    ],
+                  top: 12,
+                  child: MapIconButton(
+                    tooltip: 'Show whole map',
+                    icon: Icons.fit_screen_outlined,
+                    onPressed: _fitAll,
                   ),
                 ),
-                if (focusRoom != null)
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: _RouteBar(
-                      room: focusRoom,
-                      route: route,
-                      levelId: levelId,
-                      venue: venue,
-                      onLevel: (id) => setState(() => _levelId = id),
-                    ),
-                  ),
               ],
             ),
           ),
-          if (venue.isApproximate && focusRoom == null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(
-                'Schematic map, not to scale. Tap a room for details; follow onsite signage.',
-                style: text.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ),
+          mapCredit(context, map, (url) => openLink(context, url)),
         ],
       ),
     );
   }
 }
 
-class _MapButton extends StatelessWidget {
-  const _MapButton({
+/// "Salt Palace: L1 L2 L3 · Hyatt: L2 L3 L4 L5" panel chips.
+class RegionChips extends StatelessWidget {
+  const RegionChips({
+    super.key,
+    required this.map,
+    required this.selectedId,
+    required this.onSelected,
+    this.highlight = const {},
+    this.inline = false,
+  });
+
+  final OfficialMap map;
+  final String? selectedId;
+  final ValueChanged<MapRegion> onSelected;
+
+  /// Regions the current route passes through.
+  final Set<String> highlight;
+
+  /// Just the chips, for embedding in another horizontal scroller.
+  final bool inline;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final b = context.brand;
+    Widget group(String title, List<MapRegion> regions) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: text.labelLarge),
+        const SizedBox(width: 8),
+        for (final r in regions)
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: ChoiceChip(
+              label: Text('L${map.floorOf(r.id)}'),
+              tooltip: r.label,
+              selected: r.id == selectedId,
+              showCheckmark: false,
+              visualDensity: VisualDensity.compact,
+              avatar: highlight.contains(r.id)
+                  ? Icon(
+                      Icons.route,
+                      size: 16,
+                      color: r.id == selectedId
+                          ? Colors.white
+                          : Brand.swwYellow,
+                    )
+                  : null,
+              labelStyle: text.labelLarge?.copyWith(
+                color: r.id == selectedId ? Colors.white : b.heading,
+              ),
+              onSelected: (_) => onSelected(r),
+            ),
+          ),
+      ],
+    );
+    final sp = map.regions.where((r) => !r.isHyatt).toList();
+    final hy = map.regions.where((r) => r.isHyatt).toList();
+    final chips = [
+      if (sp.isNotEmpty) group('Salt Palace', sp),
+      if (sp.isNotEmpty && hy.isNotEmpty) const SizedBox(width: 12),
+      if (hy.isNotEmpty) group('Hyatt', hy),
+    ];
+    if (inline) return Row(mainAxisSize: MainAxisSize.min, children: chips);
+    return SizedBox(
+      height: 52,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        children: chips,
+      ),
+    );
+  }
+}
+
+class MapIconButton extends StatelessWidget {
+  const MapIconButton({
+    super.key,
     required this.tooltip,
     required this.icon,
     required this.onPressed,
@@ -307,111 +259,99 @@ class _MapButton extends StatelessWidget {
   );
 }
 
-/// North indicator; the map is drawn north-up in portrait, north-right in
-/// landscape.
-class _Compass extends StatelessWidget {
-  const _Compass();
+/// Sessions running now and next in a room (including its sub-rooms).
+({List<Session> now, List<Session> next}) roomSchedule(
+  AppState app,
+  Room room,
+) {
+  final venue = app.data.venue;
+  bool inRoom(Session s) {
+    if (s.roomId == room.id) return true;
+    final r = venue.room(s.roomId);
+    return r != null && (r.id == room.id || r.partOf == room.id);
+  }
 
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, _) {
-      final size = MediaQuery.sizeOf(context);
-      final northUp = size.height > size.width * 0.95;
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: context.brand.subtle,
-          borderRadius: BorderRadius.circular(Brand.radiusMd),
-        ),
-        child: RotatedBox(
-          quarterTurns: northUp ? 0 : 1,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.navigation, size: 16, color: Brand.swwYellow),
-              Text(
-                'N',
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(fontSize: 10, height: 1),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
+  final t = app.now;
+  final here = app.data.sessions.where(inRoom).toList();
+  final now = here.where((s) => !t.isBefore(s.start) && t.isBefore(s.end));
+  final later = here.where((s) => s.start.isAfter(t)).toList();
+  final next = later.isEmpty
+      ? <Session>[]
+      : later.where((s) => s.start == later.first.start).toList();
+  return (now: now.toList(), next: next);
 }
 
-class _RouteBar extends StatelessWidget {
-  const _RouteBar({
-    required this.room,
-    required this.route,
-    required this.levelId,
-    required this.venue,
-    required this.onLevel,
-  });
-
+class RoomSheet extends StatelessWidget {
+  const RoomSheet({super.key, required this.room, required this.onDirections});
   final Room room;
-  final List<RouteLeg> route;
-  final String levelId;
-  final Venue venue;
-  final ValueChanged<String> onLevel;
+  final VoidCallback onDirections;
 
   @override
   Widget build(BuildContext context) {
+    final app = AppScope.of(context);
     final text = Theme.of(context).textTheme;
-    final idx = route.indexWhere((l) => l.levelId == levelId);
-    final leg = idx < 0 ? null : route[idx];
-    final next = idx >= 0 && idx < route.length - 1 ? route[idx + 1] : null;
-    final prev = idx > 0 ? route[idx - 1] : null;
-    String levelName(String id) => venue.level(id)?.shortName ?? id;
-
-    return BrandCard(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-      child: Row(
+    final level = app.data.venue.level(room.levelId);
+    final sched = roomSchedule(app, room);
+    final hasSessions = sched.now.isNotEmpty || sched.next.isNotEmpty;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: hasSessions ? 0.55 : 0.3,
+      minChildSize: 0.2,
+      maxChildSize: 0.9,
+      builder: (context, scroll) => ListView(
+        controller: scroll,
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          const Icon(Icons.route, color: Brand.swwYellow),
-          const SizedBox(width: 12),
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
+                Text(room.name, style: text.headlineSmall),
+                const SizedBox(height: 4),
                 Text(
-                  leg == null
-                      ? 'Route is on ${route.map((l) => levelName(l.levelId)).join(' → ')}'
-                      : 'From ${leg.fromLabel ?? 'start'}',
-                  style: text.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  [
+                    room.building ?? 'Salt Palace',
+                    // "Hyatt Regency - Level 4" -> "Level 4" after the
+                    // building name, so it is not repeated.
+                    level?.name.replaceFirst(
+                      RegExp(r'^.*\s[-–]\s(?=Level)'),
+                      '',
+                    ),
+                  ].whereType<String>().toSet().join(' · '),
+                  style: text.bodyMedium,
                 ),
-                Text(
-                  next != null
-                      ? 'Then go to ${levelName(next.levelId)}'
-                      : (leg != null ? 'To ${room.name}' : room.name),
-                  style: text.labelLarge,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                if (room.note != null) ...[
+                  const SizedBox(height: 8),
+                  Text(room.note!, style: text.bodySmall),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    icon: Icons.directions,
+                    label: 'Directions',
+                    onPressed: onDirections,
+                  ),
                 ),
               ],
             ),
           ),
-          if (prev != null)
-            IconButton(
-              tooltip: 'Previous level',
-              onPressed: () => onLevel(prev.levelId),
-              icon: const Icon(Icons.arrow_back),
-            ),
-          if (next != null)
-            FilledButton(
-              onPressed: () => onLevel(next.levelId),
-              child: Text(levelName(next.levelId)),
-            )
-          else if (leg == null && route.isNotEmpty)
-            FilledButton(
-              onPressed: () => onLevel(route.first.levelId),
-              child: const Text('Start'),
+          if (sched.now.isNotEmpty) ...[
+            const SectionTitle('Now'),
+            for (final s in sched.now) SessionTile(session: s),
+          ],
+          if (sched.next.isNotEmpty) ...[
+            const SectionTitle('Next'),
+            for (final s in sched.next) SessionTile(session: s, showDay: true),
+          ],
+          if (!hasSessions)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Text(
+                'Nothing else scheduled here.',
+                style: text.bodySmall,
+              ),
             ),
         ],
       ),
@@ -419,8 +359,9 @@ class _RouteBar extends StatelessWidget {
   }
 }
 
-class _RoomSearch extends SearchDelegate<Room?> {
-  _RoomSearch(this.venue) : super(searchFieldLabel: 'Find a room');
+class RoomSearchDelegate extends SearchDelegate<Room?> {
+  RoomSearchDelegate(this.venue, {String label = 'Find a room'})
+    : super(searchFieldLabel: label);
   final Venue venue;
 
   @override
@@ -454,12 +395,11 @@ class _RoomSearch extends SearchDelegate<Room?> {
 
   List<Room> _results() {
     final q = query.trim().toLowerCase();
-    final list = venue.rooms.where((r) {
+    return venue.rooms.where((r) {
       if (q.isEmpty) return true;
       return r.name.toLowerCase().contains(q) ||
           r.aliases.any((a) => a.toLowerCase().contains(q));
     }).toList();
-    return list;
   }
 
   Widget _list(BuildContext context) {

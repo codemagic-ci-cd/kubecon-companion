@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/directions.dart';
 import '../data/models.dart';
+import '../data/official_map.dart';
 import '../data/reminders.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
@@ -19,6 +20,7 @@ class ConferenceData {
     required this.happenings,
     required this.info,
     this.rawRoomNames = const {},
+    this.officialMap,
   });
 
   final ScheduleData schedule;
@@ -26,6 +28,9 @@ class ConferenceData {
   final List<Happening> happenings;
   final ConferenceInfo info;
   final Map<String, String> rawRoomNames;
+
+  /// The annotated official venue map; null when it could not be loaded.
+  final OfficialMap? officialMap;
 
   List<Session> get sessions => schedule.sessions;
 
@@ -46,13 +51,22 @@ class ConferenceData {
       read('happenings.json'),
       read('info.json'),
       read('rooms_raw.json'),
+      read('official_map.json'),
     ]);
+    OfficialMap? map;
+    try {
+      final m = results[5];
+      if (m is Map<String, dynamic>) map = OfficialMap.fromJson(m);
+    } catch (e) {
+      debugPrint('Could not parse official_map.json: $e');
+    }
     return ConferenceData(
       schedule: ScheduleData.fromJson(results[0]),
       venue: results[1] == null ? Venue.empty() : Venue.fromJson(results[1]),
       happenings: Happening.listFromJson(results[2]),
       info: ConferenceInfo.fromJson(results[3]),
       rawRoomNames: parseRawRoomNames(results[4]),
+      officialMap: map,
     );
   }
 

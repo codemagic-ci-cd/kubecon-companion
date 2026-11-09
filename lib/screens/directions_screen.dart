@@ -5,8 +5,8 @@ import '../data/models.dart';
 import '../state/app_scope.dart';
 import '../theme/brand.dart';
 import '../widgets/common.dart';
-import '../widgets/venue_map.dart';
-import 'map_screen.dart';
+import '../services/location_service.dart';
+import 'map_directions.dart';
 
 IconData stepIcon(StepKind kind) => switch (kind) {
   StepKind.start => Icons.door_front_door_outlined,
@@ -21,17 +21,40 @@ IconData stepIcon(StepKind kind) => switch (kind) {
 
 /// Step-by-step directions to a room or an off-site venue.
 class DirectionsScreen extends StatelessWidget {
-  const DirectionsScreen({super.key, required this.roomId});
+  const DirectionsScreen({
+    super.key,
+    required this.roomId,
+    this.locate = currentLocation,
+  });
   final String roomId;
+
+  /// Device location lookup (injectable for tests).
+  final LocationProvider locate;
 
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final loc = app.data.locate(roomId);
+    final map = app.data.officialMap;
     return Scaffold(
-      appBar: AppBar(title: const Text('Directions')),
+      appBar: AppBar(
+        title: Text(
+          loc is RoomLocation
+              ? 'To ${shortRoomLabel(loc.room.name)}'
+              : 'Directions',
+        ),
+      ),
       body: switch (loc) {
-        RoomLocation l => _RoomDirections(location: l, venue: app.data.venue),
+        RoomLocation l
+            when map != null &&
+                map.doorFor(l.room.id, partOf: l.room.partOf) != null =>
+          MapDirections(
+            map: map,
+            room: l.room,
+            levelLabel: l.levelLabel,
+            locate: locate,
+          ),
+        RoomLocation l => _TextDirections(location: l),
         OffsiteLocation o => _OffsiteDirections(venue: o.venue),
         UnknownLocation u => EmptyState(
           icon: Icons.not_listed_location_outlined,
@@ -43,22 +66,17 @@ class DirectionsScreen extends StatelessWidget {
   }
 }
 
-class _RoomDirections extends StatelessWidget {
-  const _RoomDirections({required this.location, required this.venue});
+/// Text-only directions from venue.json for rooms we have not placed on the
+/// official map.
+class _TextDirections extends StatelessWidget {
+  const _TextDirections({required this.location});
   final RoomLocation location;
-  final Venue venue;
 
   @override
   Widget build(BuildContext context) {
     final room = location.room;
     final steps = buildSteps(room.directions);
     final text = Theme.of(context).textTheme;
-    final levelChanges = steps.where((s) => s.isLevelChange).length;
-
-    void showOnMap() => Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => MapScreen(focusRoomId: room.id)),
-    );
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
@@ -72,79 +90,13 @@ class _RoomDirections extends StatelessWidget {
           style: text.bodyMedium,
         ),
         const SizedBox(height: 16),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(Brand.radiusCard),
-          child: Container(
-            height: 200,
-            decoration: context.brand.cardDecoration,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: VenueMapView(
-                      venue: venue,
-                      levelId: room.levelId,
-                      highlightRoomId: room.id,
-                      route: planRoute(venue, room),
-                      interactive: false,
-                      focusOnHighlight: false,
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: InkWell(onTap: showOnMap),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: PrimaryButton(
-            icon: Icons.map_outlined,
-            label: 'Show on map',
-            onPressed: showOnMap,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            Pill('${steps.length} steps', icon: Icons.format_list_numbered),
-            if (levelChanges > 0)
-              Pill(
-                levelChanges == 1
-                    ? '1 level change'
-                    : '$levelChanges level changes',
-                icon: Icons.swap_vert,
-                color: Brand.swwYellow,
-              ),
-            const Pill(
-              'From the 200 South entrance',
-              icon: Icons.door_front_door_outlined,
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         if (steps.isEmpty)
           Text(
-            'No step-by-step directions for this room yet. Use the map and onsite signage.',
+            'No step-by-step directions for this room yet. Follow onsite signage or ask at any Info Desk.',
             style: text.bodyMedium,
           )
         else
           StepList(steps: steps),
-        if (venue.isApproximate) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Directions are based on the official venue map and may be approximate. Follow onsite signage and ask staff at any Info Desk.',
-            style: text.bodySmall,
-          ),
-        ],
       ],
     );
   }

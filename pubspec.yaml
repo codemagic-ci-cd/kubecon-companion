@@ -41,6 +41,7 @@ dependencies:
   flutter_svg: ^2.3.2
   web: ^1.1.2
   intl: ^0.20.3
+  geolocator: ^14.0.1
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +67,8 @@ flutter:
     - assets/data/happenings.json
     - assets/data/info.json
     - assets/data/rooms_raw.json
+    - assets/data/official_map.json
+    - assets/maps/kcna26_venue_map.jpg
     - assets/brand/
 
   fonts:

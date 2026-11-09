@@ -4,7 +4,7 @@ An unofficial companion app for KubeCon + CloudNativeCon North America 2026 (Sal
 
 - **Schedule**: browse by day, search, filter by type and track, and star sessions to save them.
 - **Session details**: prerequisites, speakers, and directions to the room.
-- **Venue map**: our own indoor map, drawn per level, with pinch-zoom and a highlighted route. Step-by-step directions call out escalators, elevators and level changes. Off-site venues get walking directions.
+- **Venue map**: the official KubeCon venue map with our room boxes and walking graph on top. Tap a room for what's on now and next; directions draw the route on the map and page through steps (escalators, elevators, step-free option). Off-site venues get walking directions.
 - **Now**: lunch, coffee breaks, receptions and other happenings, with a "happening now / up next" banner.
 - **Reminders**: a notification 10 minutes before highlights and your saved sessions.
 
@@ -40,7 +40,7 @@ Everything the app shows comes from `assets/data/*.json`, which is bundled with 
 | `tool/build_happenings.py` | `happenings.json` and `info.json` |
 | `tool/make_icons.py` | PWA, Android and iOS icons, with no dependencies |
 
-The venue map is a schematic reconstruction of the official map, not to scale.
+The venue map image is the official one (KubeCon + CloudNativeCon / Linux Foundation, https://events.linuxfoundation.org/kcna26-venue-map); room boxes and the walking graph are annotated by us in `assets/data/map_salt_palace.json` and `assets/data/map_hyatt.json` and merged with `python3 -I tool/merge_official_map.py`. The map is not to scale, so walking times are estimates.
 
 ## Ship it with Codemagic
 

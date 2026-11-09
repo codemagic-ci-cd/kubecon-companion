@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,6 +67,11 @@ class KubeConApp extends StatelessWidget {
       builder: (context, _) => MaterialApp(
         title: 'KubeCon Companion',
         debugShowCheckedModeBanner: false,
+        // Let mouse and trackpad drags scroll horizontal rows (map level
+        // chips, step pager) in desktop browsers, not only touch.
+        scrollBehavior: const MaterialScrollBehavior().copyWith(
+          dragDevices: PointerDeviceKind.values.toSet(),
+        ),
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
         themeMode: state.themeMode,

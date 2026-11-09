@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kubecon_companion/data/directions.dart';
-import 'package:kubecon_companion/data/models.dart';
 
 import 'fixtures.dart';
 
@@ -82,48 +78,6 @@ void main() {
         'Any Info Desk',
       );
       expect(resolveLocation(venue, '').label, 'Location to be announced');
-    });
-  });
-
-  group('route planning', () {
-    final venue = testVenue();
-
-    test('same-level room: one leg from the main entrance', () {
-      final legs = planRoute(venue, venue.room('l1-hall-de')!);
-      expect(legs, hasLength(1));
-      expect(legs.single.levelId, 'L1');
-      expect(legs.single.from, const Offset(10, 500));
-      expect(legs.single.to, const Offset(200, 200));
-    });
-
-    test('upper-level room: via the matching escalator on both levels', () {
-      final legs = planRoute(venue, venue.room('l2-250')!);
-      expect(legs.map((l) => l.levelId), ['L1', 'L2']);
-      expect(
-        legs.first.to,
-        const Offset(600, 480),
-      ); // North Foyer, not 155 wing
-      expect(legs.last.from, const Offset(600, 480));
-      expect(legs.last.to, const Offset(700, 340));
-    });
-
-    test('elbow path is L-shaped', () {
-      expect(elbowPath(Offset.zero, const Offset(10, 10)), [
-        Offset.zero,
-        const Offset(10, 0),
-        const Offset(10, 10),
-      ]);
-    });
-
-    test('every room in the bundled venue gets a route', () {
-      final venue = Venue.fromJson(
-        jsonDecode(File('assets/data/venue.json').readAsStringSync()),
-      );
-      for (final r in venue.rooms) {
-        final legs = planRoute(venue, r);
-        expect(legs, isNotEmpty, reason: r.id);
-        expect(legs.last.levelId, r.levelId, reason: r.id);
-      }
     });
   });
 }
