@@ -9,6 +9,7 @@ import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
 import '../widgets/now_banner.dart';
 import '../widgets/session_tile.dart';
+import '../widgets/speaker_card.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -48,12 +49,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     if (_tracks.isNotEmpty && !_tracks.contains(s.track)) return false;
     if (_query.isEmpty) return true;
     final q = _query.toLowerCase();
+    final hq = q.replaceFirst(RegExp(r'^@'), '');
     if (s.title.toLowerCase().contains(q)) return true;
     if ((s.track ?? '').toLowerCase().contains(q)) return true;
     if (s.speakers.any(
       (p) =>
           p.name.toLowerCase().contains(q) ||
-          (p.company ?? '').toLowerCase().contains(q),
+          (p.company ?? '').toLowerCase().contains(q) ||
+          (hq.isNotEmpty && speakerHandles(p).any((h) => h.contains(hq))),
     )) {
       return true;
     }

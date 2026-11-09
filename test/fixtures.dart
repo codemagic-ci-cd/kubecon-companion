@@ -127,6 +127,7 @@ Map<String, dynamic> session(
       'title': 'Engineer',
       'company': 'Example Co',
       'bio': 'Builds things.',
+      'links': {'github': 'ada-gh'},
     },
   ],
   'url': 'https://example.com/$id',

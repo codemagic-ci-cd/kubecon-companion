@@ -35,21 +35,63 @@ DateTime? parseInstant(Object? v) {
 }
 
 class Speaker {
-  const Speaker({required this.name, this.title, this.company, this.bio});
+  const Speaker({
+    required this.name,
+    this.title,
+    this.company,
+    this.bio,
+    this.photo,
+    this.links = const SpeakerLinks(),
+  });
 
   final String name;
   final String? title;
   final String? company;
   final String? bio;
 
+  /// Photo URL (may be null or fail to load; show initials then).
+  final String? photo;
+  final SpeakerLinks links;
+
   factory Speaker.fromJson(Map<String, dynamic> j) => Speaker(
     name: _str(j['name'], 'Speaker'),
     title: _strOrNull(j['title']),
     company: _strOrNull(j['company']),
     bio: _strOrNull(j['bio']),
+    photo: _strOrNull(j['photo']),
+    links: SpeakerLinks.fromJson(j['links']),
   );
 
   String get role => [title, company].whereType<String>().join(' · ');
+}
+
+/// Raw social links as they come from the data: x/github are usually bare
+/// handles, the rest full URLs. See widgets/speaker_card.dart for display.
+class SpeakerLinks {
+  const SpeakerLinks({
+    this.x,
+    this.github,
+    this.linkedin,
+    this.bluesky,
+    this.website,
+  });
+
+  final String? x;
+  final String? github;
+  final String? linkedin;
+  final String? bluesky;
+  final String? website;
+
+  factory SpeakerLinks.fromJson(Object? v) {
+    if (v is! Map) return const SpeakerLinks();
+    return SpeakerLinks(
+      x: _strOrNull(v['x']),
+      github: _strOrNull(v['github']),
+      linkedin: _strOrNull(v['linkedin']),
+      bluesky: _strOrNull(v['bluesky']),
+      website: _strOrNull(v['website']),
+    );
+  }
 }
 
 /// Session types from the data contract, with a readable label.

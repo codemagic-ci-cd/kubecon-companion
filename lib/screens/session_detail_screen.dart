@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../data/directions.dart';
-import '../data/models.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
 import '../state/app_scope.dart';
 import '../theme/brand.dart';
 import '../widgets/common.dart';
+import '../widgets/speaker_card.dart';
 import 'directions_screen.dart';
 
 class SessionDetailScreen extends StatelessWidget {
@@ -150,7 +150,7 @@ class SessionDetailScreen extends StatelessWidget {
               s.speakers.length == 1 ? 'Speaker' : 'Speakers',
               padding: const EdgeInsets.only(top: 24, bottom: 8),
             ),
-            for (final p in s.speakers) _SpeakerCard(speaker: p),
+            for (final p in s.speakers) SpeakerCard(speaker: p),
           ],
           if (s.url != null) ...[
             const SizedBox(height: 16),
@@ -270,92 +270,6 @@ class _Prerequisites extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _SpeakerCard extends StatefulWidget {
-  const _SpeakerCard({required this.speaker});
-  final Speaker speaker;
-
-  @override
-  State<_SpeakerCard> createState() => _SpeakerCardState();
-}
-
-class _SpeakerCardState extends State<_SpeakerCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = widget.speaker;
-    final text = Theme.of(context).textTheme;
-    final initials = p.name
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .take(2)
-        .map((w) => w[0].toUpperCase())
-        .join();
-    final bio = p.bio;
-    final long = bio != null && bio.length > 220;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: BrandCard(
-        onTap: long ? () => setState(() => _expanded = !_expanded) : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: Brand.blueGradient,
-                  ),
-                  child: Text(
-                    initials,
-                    style: text.labelLarge?.copyWith(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.name, style: text.titleSmall),
-                      if (p.role.isNotEmpty)
-                        Text(p.role, style: text.bodySmall),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (bio != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                bio,
-                style: text.bodyMedium,
-                maxLines: _expanded ? null : 4,
-                overflow: _expanded ? null : TextOverflow.ellipsis,
-              ),
-              if (long)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _expanded ? 'Show less' : 'Read more',
-                    style: text.labelLarge?.copyWith(
-                      color: context.brand.isDark
-                          ? Brand.dashAqua
-                          : Brand.neverBlue,
-                    ),
-                  ),
-                ),
-            ],
-          ],
-        ),
       ),
     );
   }
