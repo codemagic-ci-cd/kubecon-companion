@@ -123,26 +123,43 @@ class CodemagicLogo extends StatelessWidget {
 /// Small rounded pill with text, used for type/track/level. Pass [onTap] to
 /// make it a link.
 class Pill extends StatelessWidget {
-  const Pill(this.label, {super.key, this.color, this.icon, this.onTap});
+  const Pill(
+    this.label, {
+    super.key,
+    this.color,
+    this.icon,
+    this.onTap,
+    this.semanticLabel,
+  });
   final String label;
   final Color? color;
   final IconData? icon;
+
+  /// Makes the pill a link: a bit roomier, with a ripple, hover fill and a
+  /// small trailing chevron. Leave null for purely informational pills.
   final VoidCallback? onTap;
+
+  /// Screen reader label for a tappable pill, e.g. "Show all Talk sessions".
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     final b = context.brand;
+    final tappable = onTap != null;
     final bg = color ?? b.subtle;
     final fg = color == null ? b.heading : Colors.white;
     final radius = BorderRadius.circular(Brand.radiusPill);
-    return Material(
+    final pill = Material(
       color: bg,
       borderRadius: radius,
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
+        hoverColor: color == null ? b.subtleHover : null,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: tappable
+              ? const EdgeInsets.fromLTRB(12, 6, 8, 6)
+              : const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -159,14 +176,26 @@ class Pill extends StatelessWidget {
                       ?.copyWith(color: fg),
                 ),
               ),
-              if (onTap != null) ...[
+              if (tappable) ...[
                 const SizedBox(width: 2),
-                Icon(Icons.chevron_right, size: 14, color: fg),
+                Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: color == null ? b.icon : fg,
+                ),
               ],
             ],
           ),
         ),
       ),
+    );
+    if (!tappable) return pill;
+    return Semantics(
+      button: true,
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: pill,
     );
   }
 }

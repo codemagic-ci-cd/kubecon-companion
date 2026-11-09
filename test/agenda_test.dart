@@ -230,7 +230,7 @@ void main() {
       final app = await _state();
       await _pump(tester, app, home: const SavedScreen());
       final btn = tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.qr_code_2),
+        find.widgetWithIcon(IconButton, Icons.ios_share),
       );
       expect(btn.onPressed, isNull);
     });

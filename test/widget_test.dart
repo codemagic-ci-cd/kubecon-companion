@@ -15,9 +15,11 @@ import 'package:kubecon_companion/screens/map_screen.dart';
 import 'package:kubecon_companion/screens/now_screen.dart';
 import 'package:kubecon_companion/screens/schedule_screen.dart';
 import 'package:kubecon_companion/screens/session_detail_screen.dart';
+import 'package:kubecon_companion/screens/tagged_sessions_screen.dart';
 import 'package:kubecon_companion/services/location_service.dart';
 import 'package:kubecon_companion/services/notification_service.dart';
 import 'package:kubecon_companion/state/app_state.dart';
+import 'package:kubecon_companion/widgets/common.dart';
 import 'package:kubecon_companion/widgets/outdoor_map_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -650,30 +652,108 @@ void main() {
     state.dispose(); // cancels the reschedule debounce timer
   });
 
-  testWidgets(
-    'type and track pills on a session page open the filtered schedule',
-    (tester) async {
-      final state = await makeState();
-      await pumpApp(
-        tester,
-        state,
-        home: const SessionDetailScreen(sessionId: 't1'),
-      );
+  testWidgets('tag pills on a session page list every session with that tag', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await pumpApp(
+      tester,
+      state,
+      home: const SessionDetailScreen(sessionId: 't1'),
+    );
+    final semantics = tester.ensureSemantics();
+    expect(
+      find.bySemanticsLabel('Show all Observability sessions'),
+      findsOneWidget,
+    );
+    semantics.dispose();
 
-      // The track pill links to every session in that track, across all days.
-      await tester.tap(find.text('Observability'));
-      await tester.pumpAndSettle();
-      expect(find.byType(ScheduleScreen), findsOneWidget);
-      expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
-      expect(find.text('1'), findsOneWidget); // filter badge
+    // The track pill lists the whole track across all days, upcoming first.
+    await tester.tap(find.text('Observability'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TaggedSessionsScreen), findsOneWidget);
+    expect(find.byType(ScheduleScreen), findsNothing);
+    expect(find.text('6 sessions'), findsOneWidget);
+    expect(find.text('Coming up'), findsOneWidget);
+    expect(find.text('Today · 11:30 AM'), findsOneWidget);
 
-      // Back on the session page, the type pill links the same way.
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Talk'));
-      await tester.pumpAndSettle();
-      expect(find.byType(ScheduleScreen), findsOneWidget);
-      expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
-    },
-  );
+    final order = [
+      'Scaling CI on Kubernetes',
+      'Session t2',
+      'Lunch',
+      'Reception',
+      'Session w1',
+    ];
+    // A tall viewport so the lazy list builds every row.
+    tester.view.physicalSize = const Size(375 * 3, 3000 * 3);
+    await tester.pumpAndSettle();
+    final ys = [
+      for (final title in order)
+        tester
+            .getTopLeft(
+              find.descendant(
+                of: find.byType(SessionTile),
+                matching: find.text(title),
+              ),
+            )
+            .dy,
+    ];
+    expect(ys, orderedEquals([...ys]..sort()));
+    expect(ys.toSet(), hasLength(order.length));
+    // The keynote at 9:00 has ended: collapsed at the bottom.
+    expect(find.text('Session k1'), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('Already ended · 1 ended')).dy,
+      greaterThan(ys.last),
+    );
+    await tester.tap(find.text('Already ended · 1 ended'));
+    await tester.pumpAndSettle();
+    expect(find.text('Session k1'), findsOneWidget);
+
+    // Tapping a session there opens its page.
+    await tester.tap(find.text('Session k1'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TaggedSessionsScreen), findsNothing); // now offstage
+    expect(find.text('About k1'), findsOneWidget);
+  });
+
+  testWidgets('type and level pills open their own lists', (tester) async {
+    final state = await makeState();
+    await pumpApp(
+      tester,
+      state,
+      home: const SessionDetailScreen(sessionId: 't1'),
+    );
+    await tester.tap(find.text('Talk'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 sessions'), findsOneWidget);
+    expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
+    expect(find.text('Lunch'), findsNothing);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Beginner'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TaggedSessionsScreen), findsOneWidget);
+    expect(find.text('6 sessions'), findsOneWidget);
+  });
+
+  testWidgets('schedule filters still show upcoming-first results', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await pumpApp(tester, state);
+    await tester.enterText(find.byType(TextField), 'session');
+    await tester.pumpAndSettle();
+    expect(find.text('3 results across all days'), findsOneWidget);
+    expect(find.text('Coming up'), findsOneWidget);
+    expect(find.text('Already ended · 1 ended'), findsOneWidget);
+    // Tile pills stay informational: the tile itself opens the session.
+    final pill = tester.widget<Pill>(
+      find
+          .descendant(of: find.byType(SessionTile), matching: find.byType(Pill))
+          .first,
+    );
+    expect(pill.onTap, isNull);
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/directions.dart';
+import '../data/models.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
 import '../state/app_scope.dart';
@@ -10,21 +11,26 @@ import '../widgets/calendar_export.dart';
 import '../widgets/common.dart';
 import '../widgets/speaker_card.dart';
 import 'directions_screen.dart';
-import 'schedule_screen.dart';
+import 'tagged_sessions_screen.dart';
 
 class SessionDetailScreen extends StatelessWidget {
   const SessionDetailScreen({super.key, required this.sessionId});
   final String sessionId;
 
-  /// All sessions of one type or track, across every day.
-  void _openSchedule(
-    BuildContext context, {
-    Set<String> types = const {},
-    Set<String> tracks = const {},
-  }) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) =>
-          ScheduleScreen(initialTypes: types, initialTracks: tracks),
+  /// A pill linking to every session sharing that tag, across all days.
+  Widget _tagPill(
+    BuildContext context,
+    String tag,
+    bool Function(Session) filter, {
+    IconData? icon,
+  }) => Pill(
+    tag,
+    icon: icon,
+    semanticLabel: 'Show all $tag sessions',
+    onTap: () => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TaggedSessionsScreen(title: tag, filter: filter),
+      ),
     ),
   );
 
@@ -71,18 +77,21 @@ class SessionDetailScreen extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: [
-              Pill(
+              _tagPill(
+                context,
                 s.typeName,
+                (o) => o.type == s.type,
                 icon: kindIcon(s.type),
-                onTap: () => _openSchedule(context, types: {s.type}),
               ),
               if (s.track != null && s.track != s.typeName)
-                Pill(
-                  s.track!,
-                  onTap: () => _openSchedule(context, tracks: {s.track!}),
-                ),
+                _tagPill(context, s.track!, (o) => o.track == s.track),
               if (s.levelName != null)
-                Pill(s.levelName!, icon: Icons.signal_cellular_alt),
+                _tagPill(
+                  context,
+                  s.levelName!,
+                  (o) => o.level == s.level,
+                  icon: Icons.signal_cellular_alt,
+                ),
             ],
           ),
           const SizedBox(height: 12),

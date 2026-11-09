@@ -49,7 +49,7 @@ class SavedScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Share my agenda',
-            icon: const Icon(Icons.qr_code_2),
+            icon: const Icon(Icons.ios_share),
             onPressed: saved.isEmpty
                 ? null
                 : () => AgendaShareSheet.show(context, saved.map((s) => s.id)),
@@ -111,7 +111,7 @@ class _SavedMenu extends StatelessWidget {
         value: _SavedMenuItem.share,
         enabled: hasSaved,
         child: const ListTile(
-          leading: Icon(Icons.qr_code_2),
+          leading: Icon(Icons.ios_share),
           title: Text('Share my agenda'),
         ),
       ),
