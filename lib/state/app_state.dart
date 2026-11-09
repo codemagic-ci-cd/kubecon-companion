@@ -86,6 +86,18 @@ class ConferenceData {
   }
 }
 
+/// A start point the user picked for directions.
+class DirectionsStart {
+  const DirectionsStart({
+    required this.nodeId,
+    required this.label,
+    required this.icon,
+  });
+  final String nodeId;
+  final String label;
+  final IconData icon;
+}
+
 /// App-wide state: data, saved sessions, settings, clock and reminders.
 class AppState extends ChangeNotifier {
   AppState({
@@ -108,6 +120,10 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     };
   }
+
+  /// Start point last picked by hand on a directions screen. Kept in memory
+  /// for this app session only; null means "try my location".
+  DirectionsStart? directionsStart;
 
   static const _kSaved = 'saved_sessions';
   static const _kReminded = 'reminded_sessions';

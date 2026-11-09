@@ -98,7 +98,10 @@ void main() {
     await tester.pumpWidget(
       KubeConApp(
         state: state,
-        home: const DirectionsScreen(roomId: 'l2-250'),
+        home: DirectionsScreen(
+          roomId: 'l2-250',
+          locate: () async => const LocationFailure('No location in tests'),
+        ),
       ),
     );
     await pumpFor(tester, 1);
@@ -137,14 +140,97 @@ void main() {
       ),
     );
     await pumpFor(tester, 1);
+    // The automatic attempt on open fails quietly and offers a retry.
+    expect(find.text('Permission denied test'), findsNothing);
+    expect(find.text('From 200 South entrance'), findsOneWidget);
+    expect(find.text('Use my location'), findsOneWidget);
     await tester.tap(find.text('From 200 South entrance'));
     await pumpFor(tester, 1);
     expect(find.text('West Temple entrance'), findsOneWidget);
-    await tester.tap(find.text('Use my location'));
+    await tester.tap(find.text('Use my location').last);
     await pumpFor(tester, 1);
     expect(find.text('Permission denied test'), findsOneWidget);
     expect(find.text('From 200 South entrance'), findsOneWidget);
     await pumpFor(tester, 5);
+  });
+
+  Future<void> openDirections(
+    WidgetTester tester,
+    AppState state,
+    LocationProvider locate,
+  ) async {
+    tester.view.physicalSize = const Size(375 * 3, 812 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      KubeConApp(
+        state: state,
+        home: DirectionsScreen(roomId: 'l1-hall-de', locate: locate),
+      ),
+    );
+    await pumpFor(tester, 1);
+  }
+
+  testWidgets('a fix inside the venue starts from the nearest spot', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await openDirections(
+      tester,
+      state,
+      () async => const LocationFix(40.7655, -111.8950, 20),
+    );
+    expect(find.text('Near 200 South entrance'), findsOneWidget);
+    expect(
+      find.text("Indoor GPS can't tell floors — tap to change"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('~'), findsNothing);
+    await pumpFor(tester, 2);
+  });
+
+  testWidgets('a fix nearby adds an outdoor walk to the closest entrance', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await openDirections(
+      tester,
+      state,
+      () async => const LocationFix(40.7700, -111.8935, 25),
+    );
+    expect(find.text('Via West Temple entrance'), findsOneWidget);
+    expect(
+      find.textContaining('Walk to the West Temple entrance (about 4'),
+      findsOneWidget,
+    );
+    expect(find.text('Open in maps'), findsOneWidget);
+    await pumpFor(tester, 2);
+  });
+
+  testWidgets('a start picked by hand is remembered for the session', (
+    tester,
+  ) async {
+    final state = await makeState();
+    var calls = 0;
+    Future<LocationResult> locate() async {
+      calls++;
+      return const LocationFix(40.7655, -111.8950, 20);
+    }
+
+    await openDirections(tester, state, locate);
+    expect(calls, 1);
+    await tester.tap(find.text('Near 200 South entrance'));
+    await pumpFor(tester, 1);
+    await tester.tap(find.text('West Temple entrance'));
+    await pumpFor(tester, 1);
+    expect(find.text('From West Temple entrance'), findsOneWidget);
+    expect(state.directionsStart?.nodeId, 'sp-entrance-west-temple');
+
+    await tester.pumpWidget(const SizedBox());
+    await openDirections(tester, state, locate);
+    expect(calls, 1);
+    expect(find.text('From West Temple entrance'), findsOneWidget);
+    await pumpFor(tester, 2);
   });
 
   testWidgets('rooms not on the official map fall back to text steps', (

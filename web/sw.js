@@ -2,12 +2,12 @@
  *
  * - App shell is precached on install.
  * - Navigations: network first, cached index.html when offline.
- * - Everything else same-origin (JS, wasm, assets, fonts, data):
- *   stale-while-revalidate, so the second visit works fully offline and
- *   updates arrive on the next launch.
+ * - App code and data (.js, .mjs, .wasm, .json): network first with a 4 s
+ *   timeout, cached copy when offline or slow, so fixes reach people at once.
+ * - Images and fonts: stale-while-revalidate.
  * Bump CACHE_VERSION to drop old caches.
  */
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE = `kubecon-companion-${CACHE_VERSION}`;
 const SHELL = [
   './',
@@ -78,6 +78,21 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => caches.match('index.html', { ignoreSearch: true })
         .then((r) => r || caches.match('./')))
     );
+    return;
+  }
+
+  if (sameOrigin && /\.(m?js|wasm|json)$/.test(url.pathname)) {
+    event.respondWith(caches.open(CACHE).then((cache) => {
+      const network = fetch(req).then((res) => {
+        if (res && res.ok) cache.put(req, res.clone());
+        return res;
+      });
+      const timeout = new Promise((resolve) => setTimeout(resolve, 4000));
+      const fallback = () => cache.match(req, { ignoreSearch: true });
+      return Promise.race([network, timeout.then(fallback)])
+        .then((res) => res || network)
+        .catch(() => fallback().then((r) => r || Response.error()));
+    }));
     return;
   }
 

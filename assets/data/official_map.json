@@ -692,8 +692,11 @@
    "regionId": "sp-L1",
    "kind": "entrance",
    "label": "200 South (Main) Entrance",
-   "lat": 40.765,
-   "lng": -111.8957
+   "lat": 40.7654,
+   "lng": -111.8952,
+   "place": "200 South entrance",
+   "street": true,
+   "geoNote": "Approximate (about 20-30 m): placed on the building footprint from OpenStreetMap (Salt Palace way 33149360, Hyatt Regency way 1150797303)."
   },
   {
    "id": "sp-entrance-west-temple",
@@ -702,8 +705,11 @@
    "regionId": "sp-L1",
    "kind": "entrance",
    "label": "West Temple Entrance",
-   "lat": 40.7661,
-   "lng": -111.8935
+   "lat": 40.7672,
+   "lng": -111.8943,
+   "place": "West Temple entrance",
+   "street": true,
+   "geoNote": "Approximate (about 20-30 m): placed on the building footprint from OpenStreetMap (Salt Palace way 33149360, Hyatt Regency way 1150797303)."
   },
   {
    "id": "l1-lc-hyatt",
@@ -719,7 +725,11 @@
    "y": 1978,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Lower Concourse"
+   "label": "Lower Concourse",
+   "lat": 40.76583,
+   "lng": -111.89503,
+   "place": "Badge Pick-Up",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-lc-de",
@@ -743,7 +753,11 @@
    "y": 1978,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Lower Concourse"
+   "label": "Lower Concourse",
+   "lat": 40.76635,
+   "lng": -111.89503,
+   "place": "Lower Concourse escalator",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-lc-h",
@@ -759,7 +773,11 @@
    "y": 1978,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Info Desk (Lower Concourse)"
+   "label": "Info Desk (Lower Concourse)",
+   "lat": 40.76672,
+   "lng": -111.89503,
+   "place": "Lower Concourse Info Desk",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-lc-bdf",
@@ -791,7 +809,11 @@
    "y": 1978,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Lower Concourse"
+   "label": "Lower Concourse",
+   "lat": 40.76748,
+   "lng": -111.89503,
+   "place": "Room 150",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-lc-151",
@@ -807,7 +829,11 @@
    "y": 1978,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Lower Concourse"
+   "label": "Lower Concourse",
+   "lat": 40.768,
+   "lng": -111.89503,
+   "place": "east end of the Lower Concourse",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "door-200-south-entrance-south",
@@ -839,7 +865,11 @@
    "y": 2200,
    "regionId": "sp-L1",
    "kind": "lobby",
-   "label": "Hyatt Regency Lobby"
+   "label": "Hyatt Regency Lobby",
+   "lat": 40.7658,
+   "lng": -111.8946,
+   "place": "Hyatt lobby",
+   "geoNote": "Approximate (about 20-30 m): placed on the building footprint from OpenStreetMap (Salt Palace way 33149360, Hyatt Regency way 1150797303)."
   },
   {
    "id": "l1-hyatt-restroom",
@@ -855,7 +885,12 @@
    "y": 2295,
    "regionId": "sp-L1",
    "kind": "elevator",
-   "label": "Hyatt elevators + escalators (to Hyatt Levels 2-5)"
+   "label": "Hyatt elevators + escalators (to Hyatt Levels 2-5)",
+   "lat": 40.7659,
+   "lng": -111.8945,
+   "place": "Hyatt lobby",
+   "street": true,
+   "geoNote": "Approximate (about 20-30 m): placed on the building footprint from OpenStreetMap (Salt Palace way 33149360, Hyatt Regency way 1150797303)."
   },
   {
    "id": "door-l1-hall-de",
@@ -863,7 +898,11 @@
    "y": 1940,
    "regionId": "sp-L1",
    "kind": "door",
-   "label": "Hall DE Keynote door"
+   "label": "Hall DE Keynote door",
+   "lat": 40.76598,
+   "lng": -111.89513,
+   "place": "Hall DE doors",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "door-l1-halls-a-c-halls-1-5",
@@ -911,7 +950,11 @@
    "y": 2137,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "North Foyer"
+   "label": "North Foyer",
+   "lat": 40.76712,
+   "lng": -111.89461,
+   "place": "North Foyer",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-nf-s",
@@ -943,7 +986,11 @@
    "y": 2030,
    "regionId": "sp-L1",
    "kind": "escalator",
-   "label": "North Foyer escalator (to Level 2)"
+   "label": "North Foyer escalator (to Level 2)",
+   "lat": 40.7671,
+   "lng": -111.89489,
+   "place": "North Foyer escalators",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-nf-stairs",
@@ -1047,7 +1094,11 @@
    "y": 1868,
    "regionId": "sp-L1",
    "kind": "escalator",
-   "label": "East walkway escalator (to Level 2)"
+   "label": "East walkway escalator (to Level 2)",
+   "lat": 40.76805,
+   "lng": -111.89532,
+   "place": "east walkway escalator",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-ew-restrooms",
@@ -1079,7 +1130,11 @@
    "y": 1780,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Halls A-C expo floor"
+   "label": "Halls A-C expo floor",
+   "lat": 40.76742,
+   "lng": -111.89555,
+   "place": "Halls A-C",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "door-l1-solutions-showcase-hall-b-starlight-summit-zone",
@@ -1111,7 +1166,11 @@
    "y": 1560,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Hall 1 (Alpine Overlook)"
+   "label": "Hall 1 (Alpine Overlook)",
+   "lat": 40.7685,
+   "lng": -111.89613,
+   "place": "Hall 1 (Alpine Overlook)",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "door-l1-solutions-showcase-hall-1-alpine-overlook-zone-network-nook",
@@ -1143,7 +1202,11 @@
    "y": 1660,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Secondary Entrance (155 wing)"
+   "label": "Secondary Entrance (155 wing)",
+   "lat": 40.76886,
+   "lng": -111.89587,
+   "place": "Secondary Entrance (155 wing)",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-155-s",
@@ -1159,7 +1222,11 @@
    "y": 1560,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "155 foyer"
+   "label": "155 foyer",
+   "lat": 40.76897,
+   "lng": -111.89613,
+   "place": "155 foyer",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-155-n",
@@ -1231,7 +1298,11 @@
    "y": 1300,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Honeycomb Hub (Halls 2-3)"
+   "label": "Honeycomb Hub (Halls 2-3)",
+   "lat": 40.76826,
+   "lng": -111.89682,
+   "place": "Honeycomb Hub",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-x-mezz-s",
@@ -1271,7 +1342,11 @@
    "y": 1080,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Halls 1-5 Solutions Showcase"
+   "label": "Halls 1-5 Solutions Showcase",
+   "lat": 40.76837,
+   "lng": -111.8974,
+   "place": "Halls 1-5 Solutions Showcase",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l1-x-restrooms-4",
@@ -1303,7 +1378,11 @@
    "y": 605,
    "regionId": "sp-L1",
    "kind": "junction",
-   "label": "Corner Store + T-shirt Pick-Up"
+   "label": "Corner Store + T-shirt Pick-Up",
+   "lat": 40.76799,
+   "lng": -111.89865,
+   "place": "Corner Store",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l2-nf-elev",
@@ -1503,7 +1582,11 @@
    "y": 2262,
    "regionId": "sp-L2",
    "kind": "entrance",
-   "label": "East Entrance on West Temple (re-entry with badge)"
+   "label": "East Entrance on West Temple (re-entry with badge)",
+   "lat": 40.76727,
+   "lng": -111.89428,
+   "place": "East Entrance on West Temple (Level 2)",
+   "geoNote": "Approximate (about 20-30 m): projected from the venue map using the OpenStreetMap street grid (200 S, 100 S, West Temple, 200 W, 300 W)."
   },
   {
    "id": "l2-uc-ne",
@@ -4125,5 +4208,90 @@
    "kind": "escalator",
    "hint": "Take the escalator up to Level 4 (Regency Foyer)"
   }
- ]
+ ],
+ "geo": {
+  "note": "Geo anchors for picking a start point from GPS. Coordinates are approximate; the venue map is schematic. Sources: OpenStreetMap building ways 33149360 (Salt Palace Convention Center) and 1150797303 (Hyatt Regency Salt Lake City), and the OSM street centrelines of 200 South, 100 South, West Temple, 200 West and 300 West. Footprint is the two buildings combined, simplified.",
+  "footprint": [
+   [
+    40.76541,
+    -111.89635
+   ],
+   [
+    40.76529,
+    -111.89504
+   ],
+   [
+    40.76525,
+    -111.89422
+   ],
+   [
+    40.76605,
+    -111.89422
+   ],
+   [
+    40.7661,
+    -111.89432
+   ],
+   [
+    40.76797,
+    -111.89432
+   ],
+   [
+    40.76807,
+    -111.895
+   ],
+   [
+    40.76809,
+    -111.89561
+   ],
+   [
+    40.7683,
+    -111.89573
+   ],
+   [
+    40.76919,
+    -111.89572
+   ],
+   [
+    40.76919,
+    -111.89652
+   ],
+   [
+    40.76864,
+    -111.89651
+   ],
+   [
+    40.76865,
+    -111.89946
+   ],
+   [
+    40.76805,
+    -111.89944
+   ],
+   [
+    40.76804,
+    -111.8988
+   ],
+   [
+    40.76756,
+    -111.8988
+   ],
+   [
+    40.7675,
+    -111.89709
+   ],
+   [
+    40.7677,
+    -111.89709
+   ],
+   [
+    40.76771,
+    -111.89645
+   ],
+   [
+    40.76762,
+    -111.89635
+   ]
+  ]
+ }
 }

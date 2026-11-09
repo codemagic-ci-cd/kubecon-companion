@@ -15,6 +15,7 @@ class OfficialMap {
     required this.rooms,
     required this.nodes,
     required this.edges,
+    this.footprint = const [],
   }) {
     for (final r in regions) {
       _regions[r.id] = r;
@@ -39,6 +40,10 @@ class OfficialMap {
   final Map<String, MapRoom> rooms;
   final List<MapNode> nodes;
   final List<MapEdge> edges;
+
+  /// Building outline (Salt Palace + Hyatt) as (lat, lng) points; empty when
+  /// the map has no geo calibration.
+  final List<(double, double)> footprint;
 
   final _regions = <String, MapRegion>{};
   final _nodes = <String, MapNode>{};
@@ -141,6 +146,8 @@ class OfficialMap {
             label: n['label'] as String?,
             lat: (n['lat'] as num?)?.toDouble(),
             lng: (n['lng'] as num?)?.toDouble(),
+            place: n['place'] as String?,
+            street: n['street'] == true,
           ),
     ];
     final edges = <MapEdge>[
@@ -152,6 +159,12 @@ class OfficialMap {
             kind: _edgeKind('${e['kind'] ?? 'walk'}'),
             hint: e['hint'] as String?,
           ),
+    ];
+    final geo = j['geo'];
+    final footprint = <(double, double)>[
+      if (geo is Map)
+        for (final p in (geo['footprint'] as List? ?? const []))
+          if (p is List && p.length == 2) (d(p[0]), d(p[1])),
     ];
     return OfficialMap(
       image: '${j['image'] ?? 'assets/maps/kcna26_venue_map.jpg'}',
@@ -165,6 +178,7 @@ class OfficialMap {
       rooms: rooms,
       nodes: nodes,
       edges: edges,
+      footprint: footprint,
     );
   }
 
@@ -228,6 +242,8 @@ class MapNode {
     this.label,
     this.lat,
     this.lng,
+    this.place,
+    this.street = false,
   });
   final String id;
   final Offset pos;
@@ -236,6 +252,14 @@ class MapNode {
   final String? label;
   final double? lat;
   final double? lng;
+
+  /// Short place name for geo anchors ("North Foyer escalators").
+  final String? place;
+
+  /// A door to the street, used as the end of an outdoor walking leg.
+  final bool street;
+
+  bool get hasGeo => lat != null && lng != null;
 }
 
 enum EdgeKind { walk, escalator, elevator, stairs }
@@ -257,7 +281,7 @@ class MapEdge {
 // ---------------------------------------------------------------------------
 // Routing
 
-enum RouteStepKind { walk, escalator, elevator, stairs, arrive }
+enum RouteStepKind { outdoor, walk, escalator, elevator, stairs, arrive }
 
 /// One card in the directions pager.
 class RouteStep {
@@ -269,6 +293,7 @@ class RouteStep {
     this.hint,
     this.metres = 0,
     this.fromRegionId,
+    this.mapsUrl,
   });
 
   final RouteStepKind kind;
@@ -287,6 +312,9 @@ class RouteStep {
   final String? fromRegionId;
   final double metres;
 
+  /// For outdoor legs: walking directions in a maps app.
+  final String? mapsUrl;
+
   bool get isLevelChange =>
       kind == RouteStepKind.escalator ||
       kind == RouteStepKind.elevator ||
@@ -299,15 +327,34 @@ class MapRoute {
     required this.steps,
     required this.walkMetres,
     required this.levelChanges,
+    this.outdoorMetres = 0,
   });
   final List<String> nodeIds;
   final List<RouteStep> steps;
   final double walkMetres;
   final int levelChanges;
 
+  /// Walk outside the building before the first indoor step.
+  final double outdoorMetres;
+
   /// Walking estimate: ~75 m/min plus about a minute per level change.
-  int get minutes =>
-      math.max(1, (walkMetres / 75 + levelChanges * 1.0).round());
+  double get exactMinutes =>
+      (walkMetres + outdoorMetres) / 75 + levelChanges * 1.0;
+
+  int get minutes => math.max(1, exactMinutes.round());
+
+  /// "4 min walk", or "<1 min walk" for very short routes.
+  String get walkLabel =>
+      exactMinutes < 0.75 ? '<1 min walk' : '$minutes min walk';
+
+  /// This route with an outdoor walk to its first node put in front.
+  MapRoute withOutdoorLeg(RouteStep leg) => MapRoute(
+    nodeIds: nodeIds,
+    steps: [leg, ...steps],
+    walkMetres: walkMetres,
+    levelChanges: levelChanges,
+    outdoorMetres: outdoorMetres + leg.metres,
+  );
 }
 
 /// Dijkstra over the map graph and turn-by-turn step building.
@@ -686,10 +733,16 @@ double haversine(double lat1, double lng1, double lat2, double lng2) {
 }
 
 /// The geo-tagged node nearest to a GPS fix, with its distance in metres.
-(MapNode, double)? nearestGeoNode(OfficialMap map, double lat, double lng) {
+(MapNode, double)? nearestGeoNode(
+  OfficialMap map,
+  double lat,
+  double lng, {
+  bool Function(MapNode)? where,
+}) {
   (MapNode, double)? best;
   for (final n in map.nodes) {
     if (n.lat == null || n.lng == null) continue;
+    if (where != null && !where(n)) continue;
     final d = haversine(lat, lng, n.lat!, n.lng!);
     if (best == null || d < best.$2) best = (n, d);
   }

@@ -21,6 +21,9 @@ class LocationFailure extends LocationResult {
 
 typedef LocationProvider = Future<LocationResult> Function();
 
+/// How long to wait for a position once permission is granted.
+const locationTimeout = Duration(seconds: 6);
+
 /// One-shot position via geolocator (web + mobile); never throws.
 Future<LocationResult> currentLocation() async {
   try {
@@ -43,7 +46,7 @@ Future<LocationResult> currentLocation() async {
     final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 15),
+        timeLimit: locationTimeout,
       ),
     );
     return LocationFix(pos.latitude, pos.longitude, pos.accuracy);

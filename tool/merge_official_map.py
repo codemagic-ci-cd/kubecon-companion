@@ -5,6 +5,10 @@ Inputs (image pixel coordinates of assets/maps/kcna26_venue_map.jpg):
   assets/data/map_salt_palace.json  Salt Palace panels (sp-L1, sp-L2, sp-L3)
   assets/data/map_hyatt.json        Hyatt Regency panels (hy-L2 .. hy-L5)
 
+Geo anchors (nodes with lat/lng, a "place" name and a "geoNote" source note)
+and the building footprint ("geo" in map_salt_palace.json) are passed through
+for picking a start point from GPS.
+
 Validates ids, edges, room coverage of venue.json / sessions / happenings and
 that every room door is reachable from the 200 South entrance.
 
@@ -62,8 +66,11 @@ def image_size():
 
 def merge(parts, warnings):
     regions, rooms, nodes, edges = {}, {}, {}, []
+    geo = {}
     seen_edges = set()
     for src, part in parts:
+        if isinstance(part.get("geo"), dict):
+            geo.update(part["geo"])
         for r in part.get("regions", []):
             if r["id"] in regions:
                 warnings.append(f"{src}: duplicate region {r['id']} ignored")
@@ -94,7 +101,7 @@ def merge(parts, warnings):
                 "kind": e.get("kind", "walk"),
                 "hint": e.get("hint"),
             })
-    return regions, rooms, nodes, edges
+    return regions, rooms, nodes, edges, geo
 
 
 def validate(out, errors, warnings):
@@ -124,6 +131,18 @@ def validate(out, errors, warnings):
     for sid in SHARED:
         if sid not in nodes:
             errors.append(f"missing shared node {sid}")
+    footprint = out.get("geo", {}).get("footprint", [])
+    if footprint and len(footprint) < 3:
+        errors.append("geo footprint needs at least 3 points")
+    for n in out["nodes"]:
+        has = [k in n for k in ("lat", "lng")]
+        if any(has) and not all(has):
+            errors.append(f"node {n['id']} has only one of lat/lng")
+        if all(has):
+            if not (40.76 < n["lat"] < 40.775 and -111.905 < n["lng"] < -111.89):
+                errors.append(f"node {n['id']} lat/lng is not near the venue")
+            if not n.get("geoNote"):
+                warnings.append(f"node {n['id']} has lat/lng but no geoNote source")
 
     venue_rooms = {r["id"]: r for r in venue["rooms"]}
     alias = {}
@@ -232,7 +251,7 @@ def main():
         if not p.exists():
             raise SystemExit(f"missing {p}")
         parts.append((name.replace("map_", "").replace(".json", ""), load(name)))
-    regions, rooms, nodes, edges = merge(parts, warnings)
+    regions, rooms, nodes, edges, geo = merge(parts, warnings)
     w, h = image_size()
     order = list(REGIONS)
     out = {
@@ -247,6 +266,8 @@ def main():
         "nodes": list(nodes.values()),
         "edges": edges,
     }
+    if geo:
+        out["geo"] = geo
     validate(out, errors, warnings)
     for wmsg in warnings:
         print("warning:", wmsg)

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 
 import '../data/models.dart';
 import '../data/official_map.dart';
+import '../location/start_point.dart';
 import '../services/location_service.dart';
 import '../state/app_scope.dart';
+import '../state/app_state.dart';
 import '../theme/brand.dart';
 import '../widgets/common.dart';
 import '../widgets/official_map_view.dart';
@@ -18,10 +20,41 @@ class StartPoint {
     this.nodeId,
     this.label, {
     this.icon = Icons.door_front_door_outlined,
+    this.geo,
   });
+
+  /// A start picked from a GPS fix.
+  factory StartPoint.fromGeo(GeoStart g) => StartPoint(
+    g.node.id,
+    g.kind == GeoStartKind.indoor
+        ? 'Near ${g.placeName}'
+        : 'Via ${g.placeName}',
+    icon: Icons.my_location,
+    geo: g,
+  );
+
   final String nodeId;
   final String label;
   final IconData icon;
+
+  /// Set when the start came from the device location.
+  final GeoStart? geo;
+
+  /// GPS starts drop "From your location": the my_location icon says it and
+  /// the place name must fit on a 375 px wide phone.
+  String get chipLabel =>
+      geo != null || label.startsWith('From ') ? label : 'From $label';
+
+  /// Screen-reader text for the start chip.
+  String get semanticLabel => geo == null
+      ? chipLabel
+      : 'From your location, ${geo!.kind == GeoStartKind.indoor ? 'near' : 'via'} ${geo!.placeName}';
+
+  /// How the first step names the start ("From the 200 South entrance, ...").
+  String get startName {
+    if (geo != null) return 'the ${geo!.placeName}';
+    return label.startsWith('From ') ? label.substring(5) : 'the $label';
+  }
 }
 
 const _entrances = [
@@ -35,6 +68,7 @@ const _entrances = [
 ];
 
 IconData routeStepIcon(RouteStepKind k) => switch (k) {
+  RouteStepKind.outdoor => Icons.near_me_outlined,
   RouteStepKind.walk => Icons.directions_walk,
   RouteStepKind.escalator => Icons.escalator,
   RouteStepKind.elevator => Icons.elevator_outlined,
@@ -72,14 +106,29 @@ class _MapDirectionsState extends State<MapDirections> {
   Timer? _toastTimer;
   bool _locating = false;
 
+  /// Bumped whenever the start changes, so a late GPS fix is ignored.
+  int _locateGen = 0;
+
+  /// Why the automatic location attempt fell back to the main entrance.
+  String? _locateNote;
+
   OfficialMap get _map => widget.map;
   MapRoom? get _geo => _map.room(widget.room.id, partOf: widget.room.partOf);
 
   @override
   void initState() {
     super.initState();
+    final picked = AppScope.read(context).directionsStart;
+    if (picked != null && _map.node(picked.nodeId) != null) {
+      _start = StartPoint(picked.nodeId, picked.label, icon: picked.icon);
+    }
     _plan();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focusStep(0));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusStep(0);
+      // No start picked by hand this session: show the route from the main
+      // entrance right away and switch once a location fix arrives.
+      if (picked == null) _useLocation(explicit: false);
+    });
   }
 
   @override
@@ -98,12 +147,39 @@ class _MapDirectionsState extends State<MapDirections> {
             toNodeId: door.id,
             destinationName: widget.room.name,
             destinationRect: _geo?.rect,
-            startName: _start.label.startsWith('From ')
-                ? _start.label.substring(5)
-                : 'the ${_start.label}',
+            startName: _start.startName,
             stepFree: _stepFree,
           );
+    final g = _start.geo;
+    if (_route != null && g != null && g.kind == GeoStartKind.nearby) {
+      _route = _route!.withOutdoorLeg(
+        RouteStep(
+          kind: RouteStepKind.outdoor,
+          title:
+              'Walk to the ${g.placeName} (about ${g.outdoorMetresRounded} m, ${g.outdoorMinutes} min)',
+          hint: 'Outdoors. Maps has the street route.',
+          points: [g.node.pos],
+          regionId: g.node.regionId,
+          metres: g.outdoorMetres,
+          mapsUrl: walkingDirectionsUrl(g.node),
+        ),
+      );
+    }
     _step = 0;
+  }
+
+  /// A start picked by hand: use it and remember it for this app session.
+  void _pick(StartPoint p) {
+    _locateGen++;
+    _locating = false;
+    _locateNote = null;
+    _start = p;
+    AppScope.read(context).directionsStart = DirectionsStart(
+      nodeId: p.nodeId,
+      label: p.label,
+      icon: p.icon,
+    );
+    _replan();
   }
 
   void _replan() {
@@ -215,7 +291,9 @@ class _MapDirectionsState extends State<MapDirections> {
             ListTile(
               leading: const Icon(Icons.my_location),
               title: const Text('Use my location'),
-              subtitle: const Text('Picks the nearest entrance'),
+              subtitle: const Text(
+                'Nearest spot inside, or the closest entrance if you are outside',
+              ),
               onTap: () => Navigator.pop(ctx, 'locate'),
             ),
             ListTile(
@@ -240,10 +318,10 @@ class _MapDirectionsState extends State<MapDirections> {
     );
     if (!mounted || choice == null) return;
     if (choice is StartPoint) {
-      _start = choice;
-      _replan();
+      _pick(choice);
     } else if (choice == 'locate') {
-      await _useLocation();
+      AppScope.read(context).directionsStart = null;
+      await _useLocation(explicit: true);
     } else if (choice == 'room') {
       final room = await showSearch<Room?>(
         context: context,
@@ -255,12 +333,13 @@ class _MapDirectionsState extends State<MapDirections> {
         _snack('${room.name} is not on the map yet.');
         return;
       }
-      _start = StartPoint(
-        door.id,
-        'From ${room.name}',
-        icon: Icons.meeting_room_outlined,
+      _pick(
+        StartPoint(
+          door.id,
+          'From ${room.name}',
+          icon: Icons.meeting_room_outlined,
+        ),
       );
-      _replan();
     }
   }
 
@@ -268,37 +347,105 @@ class _MapDirectionsState extends State<MapDirections> {
     ?..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(msg)));
 
-  Future<void> _useLocation() async {
-    setState(() => _locating = true);
-    final res = await widget.locate();
-    if (!mounted) return;
-    setState(() => _locating = false);
-    switch (res) {
-      case LocationFailure f:
-        _snack(f.message);
-      case LocationFix fix:
-        final near = nearestGeoNode(_map, fix.lat, fix.lng);
-        if (near == null) {
-          _snack('Could not match your location to the venue.');
-          return;
-        }
-        final (node, dist) = near;
-        if (dist > 1500) {
-          _snack(
-            'You seem to be ${(dist / 1000).toStringAsFixed(1)} km from the venue. Starting at the closest entrance.',
-          );
-        } else {
-          _snack(
-            'Starting at the nearest entrance. Indoor GPS is approximate, so check the signs around you.',
-          );
-        }
-        _start = StartPoint(
-          node.id,
-          node.label ?? 'Nearest entrance',
-          icon: Icons.my_location,
-        );
-        _replan();
+  /// Tries the device location and switches the start when a usable fix
+  /// arrives. [explicit] is a tap on "Use my location": failures then show a
+  /// message; the automatic attempt on open fails quietly.
+  Future<void> _useLocation({required bool explicit}) async {
+    final gen = ++_locateGen;
+    setState(() {
+      _locating = true;
+      _locateNote = null;
+    });
+    LocationResult res;
+    try {
+      res = await widget.locate();
+    } catch (_) {
+      res = const LocationFailure(
+        'Could not get your location. Pick a start point instead.',
+      );
     }
+    if (!mounted || gen != _locateGen) return;
+    final g = switch (res) {
+      LocationFix f => chooseGeoStart(
+        _map,
+        lat: f.lat,
+        lng: f.lng,
+        accuracy: f.accuracy,
+      ),
+      LocationFailure _ => chooseGeoStart(_map),
+    };
+    if (g.kind != GeoStartKind.fallback) {
+      _locating = false;
+      _start = StartPoint.fromGeo(g);
+      _replan();
+      return;
+    }
+    final message = switch (g.reason) {
+      GeoFallbackReason.tooFar =>
+        'You are more than ${GeoStartRules.maxOutdoorMetres ~/ 1000} km from the venue, so directions start at the 200 South entrance.',
+      GeoFallbackReason.inaccurate => 'Your location is too imprecise right now, so directions start at the 200 South entrance.',
+      _ => res is LocationFailure ? res.message : 'Location is unavailable.',
+    };
+    final reset = _start.geo != null || (explicit && res is LocationFix);
+    setState(() {
+      _locating = false;
+      _locateNote = explicit
+          ? null
+          : switch (g.reason) {
+              GeoFallbackReason.tooFar => 'You are not near the venue yet.',
+              GeoFallbackReason.inaccurate => 'Location is too imprecise.',
+              _ => '',
+            };
+      if (reset) {
+        _start = _entrances.first;
+        _plan();
+      }
+    });
+    if (explicit) _snack(message);
+    if (reset) {
+      if (_pages.hasClients) _pages.jumpToPage(0);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusStep(0));
+    }
+  }
+
+  /// One subtle line under the start chip: the floor caveat for indoor GPS
+  /// starts, or a way to retry location after a quiet failure.
+  Widget _startNote(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall;
+    if (_start.geo?.kind == GeoStartKind.indoor) {
+      return InkWell(
+        onTap: _pickStart,
+        borderRadius: BorderRadius.circular(Brand.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            "Indoor GPS can't tell floors — tap to change",
+            style: style,
+          ),
+        ),
+      );
+    }
+    final note = _locateNote;
+    if (note == null || _locating || _start.geo != null) {
+      return const SizedBox.shrink();
+    }
+    return Row(
+      children: [
+        if (note.isNotEmpty)
+          Flexible(
+            child: Text(note, style: style, overflow: TextOverflow.ellipsis),
+          ),
+        TextButton.icon(
+          onPressed: () => _useLocation(explicit: true),
+          icon: const Icon(Icons.my_location, size: 16),
+          label: const Text('Use my location'),
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            textStyle: style?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -340,7 +487,7 @@ class _MapDirectionsState extends State<MapDirections> {
                   child: Tooltip(
                     message: 'An estimate: the venue map is not to scale. Follow onsite signage.',
                     child: Pill(
-                      '~${rt.minutes} min walk',
+                      rt.walkLabel,
                       icon: Icons.directions_walk,
                       color: Brand.neverBlue,
                     ),
@@ -417,13 +564,12 @@ class _MapDirectionsState extends State<MapDirections> {
                                 )
                               : Icon(_start.icon, size: 18),
                           label: Text(
-                            _start.label.startsWith('From ')
-                                ? _start.label
-                                : 'From ${_start.label}',
+                            _start.chipLabel,
+                            semanticsLabel: _start.semanticLabel,
                             overflow: TextOverflow.ellipsis,
                           ),
                           tooltip: 'Change start point',
-                          onPressed: _locating ? null : _pickStart,
+                          onPressed: _pickStart,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -441,6 +587,7 @@ class _MapDirectionsState extends State<MapDirections> {
                       ),
                     ],
                   ),
+                  _startNote(context),
                   const SizedBox(height: 8),
                   if (rt == null)
                     Padding(
@@ -463,6 +610,7 @@ class _MapDirectionsState extends State<MapDirections> {
                             step: rt.steps[i],
                             index: i,
                             count: rt.steps.length,
+                            onOpenMaps: (url) => openLink(context, url),
                           ),
                         ),
                       ),
@@ -508,10 +656,12 @@ class _StepCard extends StatelessWidget {
     required this.step,
     required this.index,
     required this.count,
+    required this.onOpenMaps,
   });
   final RouteStep step;
   final int index;
   final int count;
+  final ValueChanged<String> onOpenMaps;
 
   @override
   Widget build(BuildContext context) {
@@ -558,6 +708,14 @@ class _StepCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Expanded(
                     child: _HintText(step.hint!, style: text.bodyMedium),
+                  ),
+                ],
+                if (step.mapsUrl != null) ...[
+                  const SizedBox(height: 8),
+                  SubtleButton(
+                    icon: Icons.open_in_new,
+                    label: 'Open in maps',
+                    onPressed: () => onOpenMaps(step.mapsUrl!),
                   ),
                 ],
               ],
