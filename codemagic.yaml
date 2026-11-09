@@ -114,20 +114,30 @@ workflows:
     name: iOS release to TestFlight
     <<: *instance
     integrations:
-      app_store_connect: codemagic # name of the App Store Connect API key in Codemagic
+      app_store_connect: codemagic # App Store Connect API key added in Codemagic team integrations
     environment:
       <<: *env
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: io.codemagic.kubeconCompanion
+      groups:
+        - ios_signing # CERTIFICATE_PRIVATE_KEY: private key of the iOS Distribution certificate
     triggering: *triggering
     scripts:
       - *get_packages
       - *test
       - name: Set up code signing
-        script: xcode-project use-profiles
+        script: |
+          set -euo pipefail
+          keychain initialize
+          # Finds the distribution certificate that matches CERTIFICATE_PRIVATE_KEY and
+          # creates the App Store provisioning profile if it doesn't exist yet.
+          app-store-connect fetch-signing-files "io.codemagic.kubeconCompanion" \
+            --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: |
+          set -euo pipefail
           flutter build ipa --release \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
