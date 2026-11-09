@@ -6,13 +6,27 @@ import '../services/notification_service.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
+import '../widgets/calendar_export.dart';
 import '../widgets/common.dart';
 import '../widgets/speaker_card.dart';
 import 'directions_screen.dart';
+import 'schedule_screen.dart';
 
 class SessionDetailScreen extends StatelessWidget {
   const SessionDetailScreen({super.key, required this.sessionId});
   final String sessionId;
+
+  /// All sessions of one type or track, across every day.
+  void _openSchedule(
+    BuildContext context, {
+    Set<String> types = const {},
+    Set<String> tracks = const {},
+  }) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) =>
+          ScheduleScreen(initialTypes: types, initialTracks: tracks),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +71,16 @@ class SessionDetailScreen extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: [
-              Pill(s.typeName, icon: kindIcon(s.type)),
-              if (s.track != null && s.track != s.typeName) Pill(s.track!),
+              Pill(
+                s.typeName,
+                icon: kindIcon(s.type),
+                onTap: () => _openSchedule(context, types: {s.type}),
+              ),
+              if (s.track != null && s.track != s.typeName)
+                Pill(
+                  s.track!,
+                  onTap: () => _openSchedule(context, tracks: {s.track!}),
+                ),
               if (s.levelName != null)
                 Pill(s.levelName!, icon: Icons.signal_cellular_alt),
             ],
@@ -143,6 +165,14 @@ class SessionDetailScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Builder(
+            builder: (btnContext) => SubtleButton(
+              icon: Icons.event_outlined,
+              label: 'Add to calendar',
+              onPressed: () => exportToCalendar(btnContext, app, [s]),
+            ),
           ),
           if (s.prerequisites.isNotEmpty) ...[
             const SizedBox(height: 24),

@@ -13,6 +13,8 @@ import 'package:kubecon_companion/outdoor/outdoor_map.dart';
 import 'package:kubecon_companion/screens/directions_screen.dart';
 import 'package:kubecon_companion/screens/map_screen.dart';
 import 'package:kubecon_companion/screens/now_screen.dart';
+import 'package:kubecon_companion/screens/schedule_screen.dart';
+import 'package:kubecon_companion/screens/session_detail_screen.dart';
 import 'package:kubecon_companion/services/location_service.dart';
 import 'package:kubecon_companion/services/notification_service.dart';
 import 'package:kubecon_companion/state/app_state.dart';
@@ -647,4 +649,31 @@ void main() {
     expect(state.isReminderOn('t1'), isTrue);
     state.dispose(); // cancels the reschedule debounce timer
   });
+
+  testWidgets(
+    'type and track pills on a session page open the filtered schedule',
+    (tester) async {
+      final state = await makeState();
+      await pumpApp(
+        tester,
+        state,
+        home: const SessionDetailScreen(sessionId: 't1'),
+      );
+
+      // The track pill links to every session in that track, across all days.
+      await tester.tap(find.text('Observability'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ScheduleScreen), findsOneWidget);
+      expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget); // filter badge
+
+      // Back on the session page, the type pill links the same way.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Talk'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ScheduleScreen), findsOneWidget);
+      expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
+    },
+  );
 }

@@ -13,7 +13,16 @@ import '../widgets/session_tile.dart';
 import '../widgets/speaker_card.dart';
 
 class ScheduleScreen extends StatefulWidget {
-  const ScheduleScreen({super.key});
+  const ScheduleScreen({
+    super.key,
+    this.initialTypes = const {},
+    this.initialTracks = const {},
+  });
+
+  /// Filters applied on open, e.g. when a type or track pill on a session
+  /// page is tapped.
+  final Set<String> initialTypes;
+  final Set<String> initialTracks;
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -24,8 +33,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   late final TabController _tabs;
   final _search = TextEditingController();
   String _query = '';
-  final _types = <String>{};
-  final _tracks = <String>{};
+  late final _types = <String>{...widget.initialTypes};
+  late final _tracks = <String>{...widget.initialTracks};
 
   @override
   void initState() {

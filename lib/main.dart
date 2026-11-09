@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/agenda_link.dart';
 import 'screens/home_shell.dart';
 import 'services/notification_service.dart';
 import 'state/app_scope.dart';
@@ -26,7 +27,15 @@ Future<void> main() async {
     notifications: createNotificationService(),
     clockOffset: demoClockOffset(Uri.base),
   );
-  runApp(KubeConApp(state: state, initialTab: initialTabFor(Uri.base)));
+  final agenda = agendaParam(Uri.base);
+  runApp(
+    KubeConApp(
+      state: state,
+      // A shared agenda link lands on Saved, where the import ends up.
+      initialTab: agenda == null ? initialTabFor(Uri.base) : 3,
+      pendingAgenda: agenda,
+    ),
+  );
   // Descriptions and bios (details.json) are not needed for the first screen:
   // fetch them once it is up, so slow networks show the schedule sooner.
   WidgetsBinding.instance.addPostFrameCallback(
@@ -45,6 +54,12 @@ Duration demoClockOffset(Uri uri) {
   return target.toUtc().difference(DateTime.now().toUtc());
 }
 
+/// `?agenda=a1.…` from a shared agenda link (web).
+String? agendaParam(Uri uri) {
+  final v = uri.queryParameters[kAgendaParam];
+  return v == null || v.isEmpty ? null : v;
+}
+
 /// `?tab=map|now|saved` opens a tab directly (used by PWA shortcuts).
 int initialTabFor(Uri uri) => switch (uri.queryParameters['tab']) {
   'map' => 1,
@@ -59,10 +74,14 @@ class KubeConApp extends StatelessWidget {
     required this.state,
     this.home,
     this.initialTab = 0,
+    this.pendingAgenda,
   });
   final AppState state;
   final Widget? home;
   final int initialTab;
+
+  /// Agenda payload from the launch URL, offered for import once up.
+  final String? pendingAgenda;
 
   @override
   Widget build(BuildContext context) => AppScope(
@@ -80,7 +99,9 @@ class KubeConApp extends StatelessWidget {
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
         themeMode: state.themeMode,
-        home: home ?? HomeShell(initialTab: initialTab),
+        home:
+            home ??
+            HomeShell(initialTab: initialTab, pendingAgenda: pendingAgenda),
       ),
     ),
   );

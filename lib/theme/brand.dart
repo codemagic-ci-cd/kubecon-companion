@@ -331,6 +331,23 @@ ThemeData buildTheme(Brightness brightness) {
         ),
       ),
     ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: dark ? Brand.darkCardBottom : Brand.lightPage,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Brand.radiusCard),
+      ),
+      titleTextStyle: h(20),
+      contentTextStyle: b(14),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: dark ? Brand.darkSubtle : Brand.lightPage,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Brand.radiusMd),
+      ),
+      textStyle: action.copyWith(color: s.heading),
+    ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: dark ? Brand.darkSubtle : Brand.lightHeading,
       contentTextStyle: b(14).copyWith(color: Colors.white),

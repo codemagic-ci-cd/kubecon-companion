@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../data/agenda_link.dart';
+import '../services/web_url.dart';
+import '../state/app_scope.dart';
+import '../widgets/agenda_share.dart';
+
 import 'map_screen.dart';
 import 'now_screen.dart';
 import 'saved_screen.dart';
 import 'schedule_screen.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, this.initialTab = 0});
+  const HomeShell({super.key, this.initialTab = 0, this.pendingAgenda});
   final int initialTab;
+
+  /// Agenda payload from a shared link (web `?agenda=`), offered for import
+  /// after the first frame.
+  final String? pendingAgenda;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -15,6 +24,20 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   late int _index = widget.initialTab;
+
+  @override
+  void initState() {
+    super.initState();
+    final payload = widget.pendingAgenda;
+    if (payload != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // Strip it first so a reload never offers the same import again.
+        removeQueryParam(kAgendaParam);
+        if (!mounted) return;
+        await confirmAgendaImport(context, AppScope.of(context), payload);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(

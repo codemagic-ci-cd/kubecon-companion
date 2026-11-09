@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/venue_time.dart';
 import '../state/app_scope.dart';
+import '../state/app_state.dart';
+import '../widgets/agenda_share.dart';
 import '../widgets/app_bar_title.dart';
+import '../widgets/calendar_export.dart';
 import '../widgets/common.dart';
 import '../widgets/session_tile.dart';
 
@@ -43,7 +46,17 @@ class SavedScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const AppBarTitle(),
-        actions: const [SettingsAction()],
+        actions: [
+          IconButton(
+            tooltip: 'Share my agenda',
+            icon: const Icon(Icons.qr_code_2),
+            onPressed: saved.isEmpty
+                ? null
+                : () => AgendaShareSheet.show(context, saved.map((s) => s.id)),
+          ),
+          const SettingsAction(),
+          _SavedMenu(app: app, hasSaved: saved.isNotEmpty),
+        ],
       ),
       body: saved.isEmpty
           ? const EmptyState(
@@ -57,4 +70,66 @@ class SavedScreen extends StatelessWidget {
             ),
     );
   }
+}
+
+enum _SavedMenuItem { share, calendar, import }
+
+/// Overflow menu: share, export to calendar, import a shared agenda link.
+class _SavedMenu extends StatelessWidget {
+  const _SavedMenu({required this.app, required this.hasSaved});
+  final AppState app;
+  final bool hasSaved;
+
+  Future<void> _import(BuildContext context) async {
+    final payload = await showDialog<String>(
+      context: context,
+      builder: (_) => const PasteAgendaDialog(),
+    );
+    if (payload != null && context.mounted) {
+      await confirmAgendaImport(context, app, payload);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<_SavedMenuItem>(
+    tooltip: 'More',
+    icon: const Icon(Icons.more_vert),
+    onSelected: (item) => switch (item) {
+      _SavedMenuItem.share => AgendaShareSheet.show(
+        context,
+        app.savedSessions.map((s) => s.id),
+      ),
+      _SavedMenuItem.calendar => exportToCalendar(
+        context,
+        app,
+        app.savedSessions,
+      ),
+      _SavedMenuItem.import => _import(context),
+    },
+    itemBuilder: (_) => [
+      PopupMenuItem(
+        value: _SavedMenuItem.share,
+        enabled: hasSaved,
+        child: const ListTile(
+          leading: Icon(Icons.qr_code_2),
+          title: Text('Share my agenda'),
+        ),
+      ),
+      PopupMenuItem(
+        value: _SavedMenuItem.calendar,
+        enabled: hasSaved,
+        child: const ListTile(
+          leading: Icon(Icons.event_outlined),
+          title: Text('Export saved to calendar'),
+        ),
+      ),
+      const PopupMenuItem(
+        value: _SavedMenuItem.import,
+        child: ListTile(
+          leading: Icon(Icons.download_outlined),
+          title: Text('Import agenda link'),
+        ),
+      ),
+    ],
+  );
 }

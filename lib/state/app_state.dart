@@ -260,6 +260,36 @@ class AppState extends ChangeNotifier {
     _scheduleSoon();
   }
 
+  /// Sessions from [ids] that exist in the schedule and are not saved yet,
+  /// in schedule order. Unknown ids are ignored.
+  List<Session> importableSessions(Iterable<String> ids) {
+    final wanted = ids.toSet();
+    return data.sessions
+        .where((s) => wanted.contains(s.id) && !_saved.contains(s.id))
+        .toList();
+  }
+
+  /// Adds [ids] (e.g. from a shared agenda link) to saved. Never removes
+  /// anything; unknown and already saved ids are skipped. Imported sessions
+  /// get reminders like a normal save. Returns how many were added.
+  Future<int> importSaved(Iterable<String> ids) async {
+    final added = importableSessions(ids).map((s) => s.id).toList();
+    if (added.isEmpty) return 0;
+    _saved.addAll(added);
+    for (final id in added) {
+      _muted.remove(id);
+    }
+    prefs?.setStringList(_kSaved, _saved.toList());
+    prefs?.setStringList(_kMuted, _muted.toList());
+    notifyListeners();
+    if (!_notificationsEnabled ||
+        _permission == NotificationPermission.notDetermined) {
+      await setNotificationsEnabled(true);
+    }
+    _scheduleSoon();
+    return added.length;
+  }
+
   /// Returns true when the reminder is now on.
   Future<bool> toggleReminder(String id) async {
     if (isReminderOn(id)) {

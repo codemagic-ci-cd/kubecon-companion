@@ -120,41 +120,52 @@ class CodemagicLogo extends StatelessWidget {
   );
 }
 
-/// Small rounded pill with text, used for type/track/level.
+/// Small rounded pill with text, used for type/track/level. Pass [onTap] to
+/// make it a link.
 class Pill extends StatelessWidget {
-  const Pill(this.label, {super.key, this.color, this.icon});
+  const Pill(this.label, {super.key, this.color, this.icon, this.onTap});
   final String label;
   final Color? color;
   final IconData? icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final b = context.brand;
     final bg = color ?? b.subtle;
     final fg = color == null ? b.heading : Colors.white;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(Brand.radiusPill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 14, color: fg),
-            const SizedBox(width: 4),
-          ],
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(color: fg),
-            ),
+    final radius = BorderRadius.circular(Brand.radiusPill);
+    return Material(
+      color: bg,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 14, color: fg),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: fg),
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 2),
+                Icon(Icons.chevron_right, size: 14, color: fg),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
