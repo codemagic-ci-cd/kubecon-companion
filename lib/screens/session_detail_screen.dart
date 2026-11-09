@@ -78,11 +78,14 @@ class SessionDetailScreen extends StatelessWidget {
                 : Icons.place_outlined,
             title: loc.label,
             subtitle: switch (loc) {
-              RoomLocation l => '${l.levelLabel} · tap for directions',
-              OffsiteLocation o =>
-                '${o.venue.address ?? 'Off-site'} · tap for walking directions',
+              RoomLocation l => l.levelLabel,
+              OffsiteLocation o => o.venue.address ?? 'Off-site',
               UnknownLocation _ => 'Not on our venue map yet',
             },
+            actionLabel: loc is OffsiteLocation ? 'Walk there' : 'Directions',
+            actionIcon: loc is OffsiteLocation
+                ? Icons.directions_walk
+                : Icons.directions,
             onTap: loc is UnknownLocation
                 ? null
                 : () => Navigator.of(context).push(
@@ -181,12 +184,18 @@ class _InfoRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.actionLabel,
+    this.actionIcon,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+
+  /// When set (with [onTap]), shows a compact primary button instead of a chevron.
+  final String? actionLabel;
+  final IconData? actionIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +227,23 @@ class _InfoRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (onTap != null)
+            if (onTap != null && actionLabel != null) ...[
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: onTap,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Brand.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Brand.radiusMd),
+                  ),
+                ),
+                icon: Icon(actionIcon ?? Icons.directions, size: 18),
+                label: Text(actionLabel!),
+              ),
+            ] else if (onTap != null)
               Icon(Icons.chevron_right, color: context.brand.icon),
           ],
         ),
