@@ -99,7 +99,7 @@ class SessionTile extends StatelessWidget {
                       Pill(s.typeName, icon: kindIcon(s.type)),
                       if (s.track != null && s.track != s.typeName)
                         Pill(s.track!),
-                      if (s.prerequisites.isNotEmpty)
+                      if (s.hasPrerequisites)
                         const Pill('Prerequisites', icon: Icons.checklist),
                     ],
                   ),

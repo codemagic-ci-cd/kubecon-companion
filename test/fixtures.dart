@@ -102,6 +102,7 @@ final venueJson = <String, dynamic>{
   ],
 };
 
+/// A session entry in the shape of assets/data/schedule.json.
 Map<String, dynamic> session(
   String id,
   String start,
@@ -119,26 +120,30 @@ Map<String, dynamic> session(
   'type': type,
   'track': 'Observability',
   'roomId': room,
-  'description': 'About $id',
   'level': 'beginner',
-  'prerequisites': prerequisites,
-  'speakers': [
-    {
-      'name': 'Ada Example',
-      'title': 'Engineer',
-      'company': 'Example Co',
-      'bio': 'Builds things.',
-      'links': {'github': 'ada-gh'},
-    },
-  ],
+  'speakers': ['ada'],
   'url': 'https://example.com/$id',
   'highlight': highlight,
+  'hasPrerequisites': prerequisites.isNotEmpty,
 };
 
-final sessionsJson = <String, dynamic>{
+/// Prerequisites per session id; they live in details.json.
+const _prerequisites = {
+  't1': ['Laptop with kind installed'],
+};
+
+final scheduleJson = <String, dynamic>{
   'source': 'sample',
   'fetchedAt': '2026-11-09T09:00:00-07:00',
   'isSample': true,
+  'speakers': {
+    'ada': {
+      'name': 'Ada Example',
+      'title': 'Engineer',
+      'company': 'Example Co',
+      'links': {'github': 'ada-gh'},
+    },
+  },
   'sessions': [
     session(
       'k1',
@@ -153,7 +158,7 @@ final sessionsJson = <String, dynamic>{
       '2026-11-10T12:00:00-07:00',
       room: 'l2-250',
       title: 'Scaling CI on Kubernetes',
-      prerequisites: ['Laptop with kind installed'],
+      prerequisites: _prerequisites['t1']!,
     ),
     session(
       't2',
@@ -185,6 +190,24 @@ final sessionsJson = <String, dynamic>{
       type: 'workshop',
     ),
   ],
+};
+
+/// details.json for [scheduleJson]: descriptions, prerequisites, bios.
+final detailsJson = <String, dynamic>{
+  'sessions': {
+    for (final s in scheduleJson['sessions'] as List)
+      (s as Map)['id']: {
+        'description': 'About ${s['id']}',
+        'prerequisites': ?_prerequisites[s['id']],
+      },
+  },
+  'speakers': {
+    'ada': {
+      'bio': 'Builds things.',
+      'photo': 'https://cdn.example.com/ada.jpg',
+      'links': {'linkedin': 'https://www.linkedin.com/in/ada/'},
+    },
+  },
 };
 
 final happeningsJson = <String, dynamic>{
@@ -221,7 +244,8 @@ final happeningsJson = <String, dynamic>{
 };
 
 Venue testVenue() => Venue.fromJson(venueJson);
-ScheduleData testSchedule() => ScheduleData.fromJson(sessionsJson);
+ScheduleData testSchedule() => ScheduleData.fromJson(scheduleJson);
+ConferenceDetails testDetails() => ConferenceDetails.fromJson(detailsJson);
 List<Happening> testHappenings() => Happening.listFromJson(happeningsJson);
 
 /// A tiny annotated map in the shape of assets/data/official_map.json.

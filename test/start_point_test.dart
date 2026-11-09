@@ -42,7 +42,7 @@ void main() {
     test('every geo anchor can reach every session room', () {
       final venue = Venue.fromJson(_json('assets/data/venue.json'));
       final schedule = ScheduleData.fromJson(
-        _json('assets/data/sessions.json'),
+        _json('assets/data/schedule.json'),
       );
       final doors = <String>{
         for (final s in schedule.sessions)

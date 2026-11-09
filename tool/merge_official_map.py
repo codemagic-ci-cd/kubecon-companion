@@ -174,7 +174,7 @@ def validate(out, errors, warnings):
         elif not door(rid):
             errors.append(f"venue room {rid} has no door node")
 
-    sessions = load("sessions.json")
+    sessions = load("schedule.json")
     sessions = sessions["sessions"] if isinstance(sessions, dict) else sessions
     happenings = load("happenings.json")
     if isinstance(happenings, dict):

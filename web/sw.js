@@ -5,9 +5,12 @@
  * - App code and data (.js, .mjs, .wasm, .json): network first with a 4 s
  *   timeout, cached copy when offline or slow, so fixes reach people at once.
  * - Images and fonts: stale-while-revalidate.
+ * - details.json (descriptions, bios) is deliberately not in SHELL: on a
+ *   first visit over slow wifi it would compete with schedule.json. The app
+ *   fetches it after its first frame and the .json handler below caches it.
  * Bump CACHE_VERSION to drop old caches.
  */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE = `kubecon-companion-${CACHE_VERSION}`;
 const SHELL = [
   './',
@@ -20,7 +23,8 @@ const SHELL = [
   'icons/Icon-512.png',
   'assets/AssetManifest.bin.json',
   'assets/FontManifest.json',
-  'assets/assets/data/sessions.json',
+  'assets/assets/data/schedule.json',
+  'assets/assets/data/official_map.json',
   'assets/assets/data/venue.json',
   'assets/assets/data/happenings.json',
   'assets/assets/data/info.json',

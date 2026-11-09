@@ -12,7 +12,8 @@ import '../data/reminders.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
 
-/// Everything bundled in assets/data, parsed.
+/// Everything bundled in assets/data that the first screen needs, parsed.
+/// Long text (descriptions, bios) is in details.json, see [AppState.loadDetails].
 class ConferenceData {
   const ConferenceData({
     required this.schedule,
@@ -46,7 +47,7 @@ class ConferenceData {
     }
 
     final results = await Future.wait([
-      read('sessions.json'),
+      read('schedule.json'),
       read('venue.json'),
       read('happenings.json'),
       read('info.json'),
@@ -86,6 +87,9 @@ class ConferenceData {
   }
 }
 
+/// Loading state of details.json.
+enum DetailsStatus { loading, loaded, failed }
+
 /// A start point the user picked for directions.
 class DirectionsStart {
   const DirectionsStart({
@@ -106,7 +110,12 @@ class AppState extends ChangeNotifier {
     required this.notifications,
     this.clockOffset = Duration.zero,
     DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now {
+    ConferenceDetails? details,
+  }) : _clock = clock ?? DateTime.now,
+       _details = details,
+       _detailsStatus = details == null
+           ? DetailsStatus.loading
+           : DetailsStatus.loaded {
     _saved.addAll(prefs?.getStringList(_kSaved) ?? const []);
     _reminded.addAll(prefs?.getStringList(_kReminded) ?? const []);
     _notificationsEnabled = prefs?.getBool(_kNotify) ?? false;
@@ -144,6 +153,9 @@ class AppState extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.dark;
   NotificationPermission _permission = NotificationPermission.notDetermined;
   Reminder? _lastFired;
+  ConferenceDetails? _details;
+  DetailsStatus _detailsStatus;
+  Future<void>? _detailsLoad;
   Timer? _ticker;
   Timer? _rescheduleDebounce;
 
@@ -162,6 +174,40 @@ class AppState extends ChangeNotifier {
   void dismissFired() {
     _lastFired = null;
     notifyListeners();
+  }
+
+  ConferenceDetails? get details => _details;
+  DetailsStatus get detailsStatus => _detailsStatus;
+
+  /// [id] with description, prerequisites and speaker bios merged in once
+  /// details.json has loaded; the schedule-only session before that.
+  Session? detailedSession(String id) =>
+      data.session(id)?.withDetails(_details);
+
+  /// Loads details.json (descriptions, bios). Called after the first frame so
+  /// it never delays the schedule; safe to call again to retry after a failure.
+  Future<void> loadDetails([AssetBundle? bundle]) {
+    if (_detailsStatus == DetailsStatus.loaded) return Future.value();
+    return _detailsLoad ??= () async {
+      if (_detailsStatus != DetailsStatus.loading) {
+        _detailsStatus = DetailsStatus.loading;
+        notifyListeners();
+      }
+      try {
+        final raw = await (bundle ?? rootBundle).loadString(
+          'assets/data/details.json',
+          cache: false,
+        );
+        _details = ConferenceDetails.fromJson(jsonDecode(raw));
+        _detailsStatus = DetailsStatus.loaded;
+      } catch (e) {
+        debugPrint('Could not load details.json: $e');
+        _detailsStatus = DetailsStatus.failed;
+      } finally {
+        _detailsLoad = null;
+      }
+      notifyListeners();
+    }();
   }
 
   Future<void> start() async {

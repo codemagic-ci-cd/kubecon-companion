@@ -18,9 +18,89 @@ void main() {
       expect(s.sessions.first.start, DateTime.utc(2026, 11, 10, 16));
       expect(fmtTime(s.sessions.first.start), '9:00 AM');
       final t1 = s.sessions.firstWhere((x) => x.id == 't1');
-      expect(t1.prerequisites, ['Laptop with kind installed']);
+      expect(t1.hasPrerequisites, isTrue);
+      expect(t1.prerequisites, isEmpty); // in details.json
+      expect(t1.description, isEmpty);
+      expect(t1.speakers.single.id, 'ada');
       expect(t1.speakers.single.role, 'Engineer · Example Co');
+      expect(t1.speakers.single.links.github, 'ada-gh');
+      expect(t1.speakers.single.bio, isNull);
       expect(t1.levelName, 'Beginner');
+      expect(
+        s.sessions.firstWhere((x) => x.id == 'k1').hasPrerequisites,
+        false,
+      );
+    });
+
+    test('details merge description, prerequisites and speaker bios', () {
+      final d = testDetails();
+      expect(d.sessions['t1']?.description, 'About t1');
+      expect(d.speakers['ada']?.bio, 'Builds things.');
+      final t1 = testSchedule().sessions
+          .firstWhere((x) => x.id == 't1')
+          .withDetails(d);
+      expect(t1.description, 'About t1');
+      expect(t1.prerequisites, ['Laptop with kind installed']);
+      final ada = t1.speakers.single;
+      expect(ada.name, 'Ada Example');
+      expect(ada.bio, 'Builds things.');
+      expect(ada.photo, 'https://cdn.example.com/ada.jpg');
+      expect(ada.links.github, 'ada-gh');
+      expect(ada.links.linkedin, 'https://www.linkedin.com/in/ada/');
+      expect(ConferenceDetails.fromJson('junk').sessions, isEmpty);
+    });
+
+    test(
+      'speaker ids and inline speakers resolve; unknown ids are skipped',
+      () {
+        final s = ScheduleData.fromJson({
+          'speakers': {
+            '0': {'name': 'Zero'},
+            '1': 'junk',
+          },
+          'sessions': [
+            {
+              'id': 'a',
+              'start': '2026-11-10T09:00:00-07:00',
+              'speakers': [
+                '0',
+                '1',
+                'missing',
+                {'name': 'Inline Person'},
+                null,
+              ],
+            },
+          ],
+        });
+        final a = s.sessions.single;
+        expect(a.speakers.map((p) => p.name), ['Zero', 'Inline Person']);
+        expect(a.speakers.last.id, isNull);
+        // Inline speakers have no details; merging leaves them alone.
+        expect(
+          a.withDetails(testDetails()).speakers.last.name,
+          'Inline Person',
+        );
+      },
+    );
+
+    test('the older inline sessions.json shape still parses', () {
+      final s = ScheduleData.fromJson({
+        'sessions': [
+          {
+            'id': 'x',
+            'start': '2026-11-10T09:00:00-07:00',
+            'description': 'Inline',
+            'prerequisites': ['Laptop'],
+            'speakers': [
+              {'name': 'Ada', 'bio': 'Bio'},
+            ],
+          },
+        ],
+      }).sessions.single;
+      expect(s.description, 'Inline');
+      expect(s.hasPrerequisites, isTrue);
+      expect(s.speakers.single.bio, 'Bio');
+      expect(s.withDetails(testDetails()).description, 'Inline');
     });
 
     test('tolerates nulls, missing fields and junk', () {
@@ -99,7 +179,7 @@ void main() {
     test(
       'every session room resolves to the venue map or an off-site venue',
       () {
-        final schedule = ScheduleData.fromJson(load('sessions.json'));
+        final schedule = ScheduleData.fromJson(load('schedule.json'));
         final venue = Venue.fromJson(load('venue.json'));
         expect(schedule.sessions, isNotEmpty);
         expect(venue.levels, isNotEmpty);
@@ -120,6 +200,42 @@ void main() {
         expect(r.x + r.w, lessThanOrEqualTo(1000.5), reason: r.id);
         expect(r.y + r.h, lessThanOrEqualTo(600.5), reason: r.id);
       }
+    });
+
+    test('schedule.json and details.json parse and join', () {
+      final schedule = ScheduleData.fromJson(load('schedule.json'));
+      final details = ConferenceDetails.fromJson(load('details.json'));
+      expect(schedule.sessions, hasLength(greaterThan(500)));
+      expect(details.sessions, isNotEmpty);
+      expect(details.speakers, isNotEmpty);
+      // Every session with details is on the schedule, and every speaker
+      // with details is used by a session.
+      final ids = schedule.sessions.map((s) => s.id).toSet();
+      expect(details.sessions.keys.where((k) => !ids.contains(k)), isEmpty);
+      final speakerIds = {
+        for (final s in schedule.sessions)
+          for (final p in s.speakers) ?p.id,
+      };
+      expect(
+        details.speakers.keys.where((k) => !speakerIds.contains(k)),
+        isEmpty,
+      );
+      final withPrereqs = schedule.sessions.where((s) => s.hasPrerequisites);
+      expect(withPrereqs, isNotEmpty);
+      for (final s in withPrereqs) {
+        expect(details.sessions[s.id]?.prerequisites, isNotEmpty, reason: s.id);
+      }
+      final full = schedule.sessions.map((s) => s.withDetails(details));
+      expect(full.where((s) => s.description.isNotEmpty), isNotEmpty);
+      expect(
+        full.expand((s) => s.speakers).where((p) => p.bio != null),
+        isNotEmpty,
+      );
+      expect(
+        schedule.sessions.expand((s) => s.speakers).every((p) => p.bio == null),
+        isTrue,
+        reason: 'bios belong in details.json',
+      );
     });
 
     test('happenings and info parse', () {

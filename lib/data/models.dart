@@ -37,6 +37,7 @@ DateTime? parseInstant(Object? v) {
 class Speaker {
   const Speaker({
     required this.name,
+    this.id,
     this.title,
     this.company,
     this.bio,
@@ -44,6 +45,9 @@ class Speaker {
     this.links = const SpeakerLinks(),
   });
 
+  /// Key into the speaker maps of schedule.json / details.json; null for
+  /// speakers given inline (no profile).
+  final String? id;
   final String name;
   final String? title;
   final String? company;
@@ -53,7 +57,8 @@ class Speaker {
   final String? photo;
   final SpeakerLinks links;
 
-  factory Speaker.fromJson(Map<String, dynamic> j) => Speaker(
+  factory Speaker.fromJson(Map<String, dynamic> j, {String? id}) => Speaker(
+    id: id ?? _strOrNull(j['id']),
     name: _str(j['name'], 'Speaker'),
     title: _strOrNull(j['title']),
     company: _strOrNull(j['company']),
@@ -63,6 +68,38 @@ class Speaker {
   );
 
   String get role => [title, company].whereType<String>().join(' · ');
+
+  /// This speaker with bio, photo and extra links from details.json.
+  Speaker withDetails(SpeakerDetails? d) => d == null
+      ? this
+      : Speaker(
+          id: id,
+          name: name,
+          title: title,
+          company: company,
+          bio: d.bio ?? bio,
+          photo: d.photo ?? photo,
+          links: links.mergedWith(d.links),
+        );
+}
+
+/// The part of a speaker that is loaded after startup (details.json).
+class SpeakerDetails {
+  const SpeakerDetails({
+    this.bio,
+    this.photo,
+    this.links = const SpeakerLinks(),
+  });
+
+  final String? bio;
+  final String? photo;
+  final SpeakerLinks links;
+
+  factory SpeakerDetails.fromJson(Map<String, dynamic> j) => SpeakerDetails(
+    bio: _strOrNull(j['bio']),
+    photo: _strOrNull(j['photo']),
+    links: SpeakerLinks.fromJson(j['links']),
+  );
 }
 
 /// Raw social links as they come from the data: x/github are usually bare
@@ -92,6 +129,15 @@ class SpeakerLinks {
       website: _strOrNull(v['website']),
     );
   }
+
+  /// Fills links missing here from [other].
+  SpeakerLinks mergedWith(SpeakerLinks other) => SpeakerLinks(
+    x: x ?? other.x,
+    github: github ?? other.github,
+    linkedin: linkedin ?? other.linkedin,
+    bluesky: bluesky ?? other.bluesky,
+    website: website ?? other.website,
+  );
 }
 
 /// Session types from the data contract, with a readable label.
@@ -131,6 +177,7 @@ class Session {
     this.speakers = const [],
     this.url,
     this.highlight = false,
+    this._hasPrerequisites = false,
   });
 
   final String id;
@@ -147,11 +194,22 @@ class Session {
   final String? url;
   final bool highlight;
 
-  static Session? fromJson(Map<String, dynamic> j) {
+  /// Known from schedule.json before [prerequisites] (details.json) loads.
+  bool get hasPrerequisites => _hasPrerequisites || prerequisites.isNotEmpty;
+  final bool _hasPrerequisites;
+
+  /// Parses a session. [speakers] resolves speaker ids (schedule.json); the
+  /// older inline format with speaker objects, description and prerequisites
+  /// is accepted too.
+  static Session? fromJson(
+    Map<String, dynamic> j, [
+    Map<String, Speaker> speakers = const {},
+  ]) {
     final start = parseInstant(j['start']);
     if (start == null) return null;
     final end =
         parseInstant(j['end']) ?? start.add(const Duration(minutes: 30));
+    final prerequisites = _strings(j['prerequisites']);
     return Session(
       id: _str(j['id'], '${j['title']}-${j['start']}'),
       title: _str(j['title'], 'Untitled session').trim(),
@@ -162,10 +220,48 @@ class Session {
       roomId: _str(j['roomId']),
       description: _str(j['description']).trim(),
       level: _strOrNull(j['level']),
-      prerequisites: _strings(j['prerequisites']),
-      speakers: _maps(j['speakers']).map(Speaker.fromJson).toList(),
+      prerequisites: prerequisites,
+      speakers: [
+        if (j['speakers'] case final List list)
+          for (final p in list)
+            if (p is Map)
+              Speaker.fromJson(p.cast<String, dynamic>())
+            else if (p is String || p is num)
+              ?speakers[p.toString()],
+      ],
       url: _strOrNull(j['url']),
       highlight: _bool(j['highlight']),
+      hasPrerequisites: _bool(j['hasPrerequisites']),
+    );
+  }
+
+  /// This session with description, prerequisites and speaker bios from
+  /// details.json. Inline values are kept when details have none.
+  Session withDetails(ConferenceDetails? d) {
+    if (d == null) return this;
+    final sd = d.sessions[id];
+    return Session(
+      id: id,
+      title: title,
+      start: start,
+      end: end,
+      type: type,
+      roomId: roomId,
+      track: track,
+      description: (sd?.description.isNotEmpty ?? false)
+          ? sd!.description
+          : description,
+      level: level,
+      prerequisites: (sd?.prerequisites.isNotEmpty ?? false)
+          ? sd!.prerequisites
+          : prerequisites,
+      speakers: [
+        for (final p in speakers)
+          p.withDetails(p.id == null ? null : d.speakers[p.id]),
+      ],
+      url: url,
+      highlight: highlight,
+      hasPrerequisites: hasPrerequisites,
     );
   }
 
@@ -193,10 +289,19 @@ class ScheduleData {
   factory ScheduleData.fromJson(Object? json) {
     final j = json is Map ? json.cast<String, dynamic>() : <String, dynamic>{};
     final raw = json is List ? json : j['sessions'];
+    final speakers = <String, Speaker>{
+      if (j['speakers'] case final Map m)
+        for (final e in m.entries)
+          if (e.value is Map)
+            e.key.toString(): Speaker.fromJson(
+              (e.value as Map).cast<String, dynamic>(),
+              id: e.key.toString(),
+            ),
+    };
     final sessions =
         (raw is List ? raw : const [])
             .whereType<Map>()
-            .map((m) => Session.fromJson(m.cast<String, dynamic>()))
+            .map((m) => Session.fromJson(m.cast<String, dynamic>(), speakers))
             .whereType<Session>()
             .toList()
           ..sort((a, b) {
@@ -208,6 +313,41 @@ class ScheduleData {
       source: _strOrNull(j['source']),
       fetchedAt: parseInstant(j['fetchedAt']),
       isSample: _bool(j['isSample']),
+    );
+  }
+}
+
+/// Long text loaded after the first frame (details.json): descriptions,
+/// prerequisites and speaker bios/photos/links.
+class SessionDetails {
+  const SessionDetails({this.description = '', this.prerequisites = const []});
+
+  final String description;
+  final List<String> prerequisites;
+
+  factory SessionDetails.fromJson(Map<String, dynamic> j) => SessionDetails(
+    description: _str(j['description']).trim(),
+    prerequisites: _strings(j['prerequisites']),
+  );
+}
+
+class ConferenceDetails {
+  const ConferenceDetails({this.sessions = const {}, this.speakers = const {}});
+
+  final Map<String, SessionDetails> sessions;
+  final Map<String, SpeakerDetails> speakers;
+
+  factory ConferenceDetails.fromJson(Object? json) {
+    final j = json is Map ? json.cast<String, dynamic>() : <String, dynamic>{};
+    Map<String, T> parse<T>(Object? v, T Function(Map<String, dynamic>) f) => {
+      if (v case final Map m)
+        for (final e in m.entries)
+          if (e.value is Map)
+            e.key.toString(): f((e.value as Map).cast<String, dynamic>()),
+    };
+    return ConferenceDetails(
+      sessions: parse(j['sessions'], SessionDetails.fromJson),
+      speakers: parse(j['speakers'], SpeakerDetails.fromJson),
     );
   }
 }

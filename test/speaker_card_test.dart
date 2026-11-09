@@ -78,7 +78,9 @@ void main() {
     expect(find.text('Show less'), findsOneWidget);
   });
 
-  testWidgets('schedule search matches speaker handles', (tester) async {
+  testWidgets('schedule search matches speaker names and handles', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     final state = AppState(
       data: ConferenceData(
@@ -104,5 +106,16 @@ void main() {
     await tester.enterText(find.byType(TextField), '@nobody-here');
     await tester.pumpAndSettle();
     expect(find.text('Scaling CI on Kubernetes'), findsNothing);
+
+    // Names and companies come from schedule.json, so search works before
+    // details.json has loaded (this state has no details).
+    expect(state.details, isNull);
+    await tester.enterText(find.byType(TextField), 'ada example');
+    await tester.pumpAndSettle();
+    expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'example co');
+    await tester.pumpAndSettle();
+    expect(find.text('Scaling CI on Kubernetes'), findsOneWidget);
   });
 }

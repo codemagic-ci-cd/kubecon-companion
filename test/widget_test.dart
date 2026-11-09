@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kubecon_companion/data/models.dart';
 import 'package:kubecon_companion/main.dart';
@@ -14,6 +18,7 @@ import 'fixtures.dart';
 Future<AppState> makeState({
   Map<String, Object> prefs = const {},
   bool withMap = true,
+  bool withDetails = true,
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
   return AppState(
@@ -33,7 +38,25 @@ Future<AppState> makeState({
     notifications: NoopNotificationService(),
     // 10:00 AM MST on Tue Nov 10.
     clock: () => DateTime.utc(2026, 11, 10, 17),
+    details: withDetails ? testDetails() : null,
   );
+}
+
+/// Serves details.json from memory, or fails, for [AppState.loadDetails].
+class _DetailsBundle extends CachingAssetBundle {
+  _DetailsBundle({this.fail = false});
+  final bool fail;
+  final gate = Completer<void>();
+
+  @override
+  Future<ByteData> load(String key) async {
+    await gate.future;
+    if (fail || key != 'assets/data/details.json') {
+      throw FlutterError('Unable to load asset: $key');
+    }
+    final bytes = utf8.encode(jsonEncode(detailsJson));
+    return ByteData.sublistView(Uint8List.fromList(bytes));
+  }
 }
 
 Future<void> pumpApp(
@@ -76,6 +99,56 @@ void main() {
     expect(find.text('Laptop with kind installed'), findsOneWidget);
     expect(find.text('Ada Example'), findsOneWidget);
     expect(find.text('Room 250 A-C'), findsOneWidget);
+  });
+
+  testWidgets('session detail shows a placeholder until details load', (
+    tester,
+  ) async {
+    final state = await makeState(withDetails: false);
+    expect(state.detailsStatus, DetailsStatus.loading);
+    final bundle = _DetailsBundle();
+    final loading = state.loadDetails(bundle);
+    await pumpApp(tester, state);
+
+    await tester.tap(find.text('Scaling CI on Kubernetes'));
+    await tester.pumpAndSettle();
+    // Schedule data is there at once: title, room, save and reminder.
+    expect(find.text('Room 250 A-C'), findsOneWidget);
+    expect(find.text('Add reminder'), findsOneWidget);
+    expect(find.text('Ada Example'), findsOneWidget);
+    expect(find.text('Loading details…'), findsOneWidget);
+    expect(find.text('About t1'), findsNothing);
+    expect(find.text('Builds things.'), findsNothing);
+
+    bundle.gate.complete();
+    await tester.runAsync(() => loading);
+    await tester.pumpAndSettle();
+    expect(state.detailsStatus, DetailsStatus.loaded);
+    expect(find.text('Loading details…'), findsNothing);
+    expect(find.text('About t1'), findsOneWidget);
+    expect(find.text('Before you go'), findsOneWidget);
+    expect(find.text('Laptop with kind installed'), findsOneWidget);
+    expect(find.text('Builds things.'), findsOneWidget);
+    expect(find.text('LinkedIn'), findsOneWidget);
+  });
+
+  testWidgets('session detail still works when details fail to load', (
+    tester,
+  ) async {
+    final state = await makeState(withDetails: false);
+    final bundle = _DetailsBundle(fail: true)..gate.complete();
+    await tester.runAsync(() => state.loadDetails(bundle));
+    expect(state.detailsStatus, DetailsStatus.failed);
+    await pumpApp(tester, state);
+
+    await tester.tap(find.text('Scaling CI on Kubernetes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Room 250 A-C'), findsOneWidget);
+    await tester.tap(find.text('Add reminder'));
+    await tester.pumpAndSettle();
+    expect(state.isReminded('t1'), isTrue);
+    expect(state.upcomingReminders.map((r) => r.sessionId), contains('t1'));
   });
 
   testWidgets('search filters the day list', (tester) async {

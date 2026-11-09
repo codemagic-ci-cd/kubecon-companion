@@ -13,7 +13,7 @@ void main() {
       _json('assets/data/official_map.json')! as Map<String, dynamic>,
     );
     final venue = Venue.fromJson(_json('assets/data/venue.json'));
-    final schedule = ScheduleData.fromJson(_json('assets/data/sessions.json'));
+    final schedule = ScheduleData.fromJson(_json('assets/data/schedule.json'));
     final planner = RoutePlanner(map);
 
     MapRoute? routeTo(String roomId, {bool stepFree = false}) {

@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """Convert the official KubeCon + CloudNativeCon NA 2026 schedule (Sessionize API
-backing events.linuxfoundation.org/.../program/schedule/) into assets/data/sessions.json.
+backing events.linuxfoundation.org/.../program/schedule/) into two minified files:
+
+  assets/data/schedule.json  loaded at startup: everything the schedule list, search,
+                             filters, Now/Saved tabs and reminders need, plus a speaker
+                             map id -> {name, title, company, links: x/github/bluesky}
+                             (handles are used by search).
+  assets/data/details.json   loaded after the first frame: session descriptions and
+                             prerequisites, speaker bio/photo/linkedin/website, each
+                             speaker once (deduped by Sessionize speaker id).
 
 Usage:  python3 -I tool/build_sessions.py [path/to/all.json]
 If no path is given it downloads https://sessionize.com/api/v2/svi82w6c/view/All.
@@ -214,6 +222,29 @@ def speaker_links(sp):
             out["website"] = url
     return out
 
+SEARCH_LINKS = ("x", "github", "bluesky")
+
+
+def compact(d):
+    """Drop empty values (None, "", [], {}, False) to keep the JSON small."""
+    return {k: v for k, v in d.items() if v not in (None, "", [], {}, False)}
+
+
+def base36(n):
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    out = ""
+    while True:
+        n, r = divmod(n, 36)
+        out = digits[r] + out
+        if n == 0:
+            return out
+
+
+def write_min(name, doc):
+    with open(os.path.join(OUT_DIR, name), "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, separators=(",", ":"))
+
+
 def main():
     if len(sys.argv) > 1:
         data = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -228,7 +259,7 @@ def main():
     level_items = {i["id"]: i["name"] for c in data["categories"] if c["title"] == "Audience Level" for i in c["items"]}
     rooms = {r["id"]: r["name"].strip() for r in data["rooms"]}
 
-    speakers = {}
+    speakers, speaker_details = {}, {}
     for sp in data["speakers"]:
         qa = {q["questionId"]: (q["answerValue"] or "").strip() for q in sp.get("questionAnswers", [])}
         company = qa.get(Q_COMPANY_OVERRIDE) or qa.get(Q_COMPANY) or None
@@ -239,19 +270,24 @@ def main():
                 company, title = [x.strip() for x in tl.split(", ", 1)]
             else:
                 title = tl
+        links = speaker_links(sp)
         speakers[sp["id"]] = {
             "name": sp.get("fullName") or f'{sp.get("firstName","")} {sp.get("lastName","")}'.strip(),
-            "title": title,
-            "company": company,
+            "title": _clean(title),
+            "company": _clean(company),
+            # Handles stay in the schedule file: search matches them.
+            "links": {k: v for k, v in links.items() if k in SEARCH_LINKS},
+        }
+        speaker_details[sp["id"]] = {
             "bio": (sp.get("bio") or "").replace("\r\n", "\n").strip() or None,
             "photo": sp.get("profilePicture") or None,
-            "links": speaker_links(sp),
+            "links": {k: v for k, v in links.items() if k not in SEARCH_LINKS},
         }
-        speakers[sp["id"]]["company"] = _clean(speakers[sp["id"]]["company"])
-        speakers[sp["id"]]["title"] = _clean(speakers[sp["id"]]["title"])
 
     room_map = {}
     out = []
+    session_details = {}
+    used_speakers = set()
     for s in data["sessions"]:
         if s.get("status") not in (None, "Accepted"):
             continue
@@ -272,41 +308,58 @@ def main():
         desc = clean_desc(s.get("description"))
         title = re.sub(r"\s+", " ", s["title"]).strip()
         stype = classify(title, primary, sess_cats)
-        spk = [speakers[x] for x in s["speakers"] if x in speakers]
+        spk = [x for x in s["speakers"] if x in speakers]
+        used_speakers.update(spk)
         if not spk and qa.get(Q_NAME_DISPLAY):
-            spk = [{"name": qa[Q_NAME_DISPLAY], "title": None, "company": None, "bio": None}]
+            spk = [{"name": qa[Q_NAME_DISPLAY]}]  # no Sessionize profile: inline
         lvl = next((level_items[x] for x in s["categoryItems"] if x in level_items), None)
         level = {"Beginner": "beginner", "Advanced": "advanced", "Any Level": "any",
                  "Intermediate": "intermediate"}.get(lvl)
         track = re.sub(r"^[^\w]+", "", primary).strip() if primary else None
         highlight = stype in ("keynote", "break", "meal", "social") or bool(HIGHLIGHT_RE.search(title)) \
             or title == "Solutions Showcase"
-        out.append({
-            "id": str(s["id"]),
+        prereq = prerequisites(desc, sess_cats)
+        sid = str(s["id"])
+        out.append(compact({
+            "id": sid,
             "title": title,
             "start": iso(s["startsAt"]),
             "end": iso(s["endsAt"]),
             "type": stype,
             "track": track,
             "roomId": rid,
-            "description": desc,
             "level": level,
-            "prerequisites": prerequisites(desc, sess_cats),
             "speakers": spk,
             "url": SCHED_URL.format(s["id"]),
             "highlight": highlight,
-        })
+            "hasPrerequisites": bool(prereq),
+        }))
+        if desc or prereq:
+            session_details[sid] = compact({"description": desc, "prerequisites": prereq})
 
     out.sort(key=lambda x: (x["start"], x["end"], x["title"]))
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=-7))).replace(microsecond=0).isoformat()
-    doc = {"source": src_note, "fetchedAt": now, "isSample": False, "sessions": out}
+    # Sessionize speaker ids are 36-char UUIDs that gzip badly (~35 KB of the
+    # schedule file); the app only needs them to join the two files, so use short
+    # sequential base-36 ids instead. Not stable across rebuilds; never persist them.
+    used = sorted(used_speakers)
+    short = {k: base36(i) for i, k in enumerate(used)}
+    for sess in out:
+        if "speakers" in sess:
+            sess["speakers"] = [short.get(x, x) if isinstance(x, str) else x for x in sess["speakers"]]
+    schedule = {"source": src_note, "fetchedAt": now, "isSample": False,
+                "speakers": {short[k]: compact(speakers[k]) for k in used},
+                "sessions": out}
+    details = {"source": src_note, "fetchedAt": now,
+               "sessions": session_details,
+               "speakers": {short[k]: d for k in used if (d := compact(speaker_details[k]))}}
     os.makedirs(OUT_DIR, exist_ok=True)
-    with open(os.path.join(OUT_DIR, "sessions.json"), "w", encoding="utf-8") as f:
-        json.dump(doc, f, ensure_ascii=False, indent=1)
+    write_min("schedule.json", schedule)
+    write_min("details.json", details)
     rr = sorted(room_map.values(), key=lambda r: (r["kind"], r["id"]))
     with open(os.path.join(OUT_DIR, "rooms_raw.json"), "w", encoding="utf-8") as f:
         json.dump({"source": src_note, "rooms": rr}, f, ensure_ascii=False, indent=1)
-    print(f"wrote {len(out)} sessions, {len(rr)} rooms")
+    print(f"wrote {len(out)} sessions, {len(used)} speakers, {len(rr)} rooms")
 
 
 if __name__ == "__main__":

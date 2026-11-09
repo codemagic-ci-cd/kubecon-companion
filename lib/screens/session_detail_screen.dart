@@ -4,6 +4,7 @@ import '../data/directions.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
 import '../state/app_scope.dart';
+import '../state/app_state.dart';
 import '../theme/brand.dart';
 import '../widgets/common.dart';
 import '../widgets/speaker_card.dart';
@@ -16,7 +17,9 @@ class SessionDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
-    final s = app.data.session(sessionId);
+    // Schedule data right away; description, prerequisites and speaker bios
+    // are merged in once details.json has loaded.
+    final s = app.detailedSession(sessionId);
     if (s == null) {
       return Scaffold(
         appBar: AppBar(),
@@ -144,7 +147,13 @@ class SessionDetailScreen extends StatelessWidget {
               padding: EdgeInsets.only(top: 24, bottom: 8),
             ),
             SelectableText(s.description, style: text.bodyMedium),
-          ],
+          ] else if (app.detailsStatus == DetailsStatus.loading)
+            const _DetailsLoading()
+          else if (app.detailsStatus == DetailsStatus.failed)
+            _DetailsFailed(
+              onRetry: app.loadDetails,
+              withPrerequisites: s.hasPrerequisites,
+            ),
           if (s.speakers.isNotEmpty) ...[
             SectionTitle(
               s.speakers.length == 1 ? 'Speaker' : 'Speakers',
@@ -269,6 +278,79 @@ class _Prerequisites extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Placeholder while details.json (description, bios) is still loading.
+class _DetailsLoading extends StatelessWidget {
+  const _DetailsLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final b = context.brand;
+    Widget bar(double widthFactor) => FractionallySizedBox(
+      alignment: Alignment.centerLeft,
+      widthFactor: widthFactor,
+      child: Container(
+        height: 12,
+        margin: const EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+          color: b.subtle,
+          borderRadius: BorderRadius.circular(Brand.radiusSm),
+        ),
+      ),
+    );
+    return Semantics(
+      key: const ValueKey('details-loading'),
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Loading details…',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            bar(1),
+            bar(0.92),
+            bar(0.6),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// details.json could not be loaded: everything else on the screen still
+/// works, so say so quietly and offer a retry.
+class _DetailsFailed extends StatelessWidget {
+  const _DetailsFailed({required this.onRetry, this.withPrerequisites = false});
+  final Future<void> Function() onRetry;
+  final bool withPrerequisites;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off, size: 20, color: context.brand.icon),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              withPrerequisites
+                  ? 'Could not load the description and prerequisites. '
+                        'Check your connection.'
+                  : 'Could not load the description. Check your connection.',
+              style: text.bodySmall,
+            ),
+          ),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

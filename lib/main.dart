@@ -27,6 +27,11 @@ Future<void> main() async {
     clockOffset: demoClockOffset(Uri.base),
   );
   runApp(KubeConApp(state: state, initialTab: initialTabFor(Uri.base)));
+  // Descriptions and bios (details.json) are not needed for the first screen:
+  // fetch them once it is up, so slow networks show the schedule sooner.
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => unawaited(state.loadDetails()),
+  );
   unawaited(state.start());
 }
 
