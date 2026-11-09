@@ -5,7 +5,7 @@ import 'models.dart';
 
 /// Main venue line used in calendar LOCATION fields.
 const kVenueCalendarAddress =
-    'Salt Palace Convention Center, 100 S West Temple, Salt Lake City';
+    'Salt Palace Convention Center, 90 South West Temple, Salt Lake City';
 
 /// Hotel line for rooms in the Hyatt Regency (levels H2-H5).
 const kHyattCalendarAddress =
