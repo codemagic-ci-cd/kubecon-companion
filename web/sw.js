@@ -1,0 +1,104 @@
+/* KubeCon Companion offline service worker.
+ *
+ * - App shell is precached on install.
+ * - Navigations: network first, cached index.html when offline.
+ * - Everything else same-origin (JS, wasm, assets, fonts, data):
+ *   stale-while-revalidate, so the second visit works fully offline and
+ *   updates arrive on the next launch.
+ * Bump CACHE_VERSION to drop old caches.
+ */
+const CACHE_VERSION = 'v1';
+const CACHE = `kubecon-companion-${CACHE_VERSION}`;
+const SHELL = [
+  './',
+  'index.html',
+  'flutter_bootstrap.js',
+  'main.dart.js',
+  'manifest.json',
+  'favicon.png',
+  'icons/Icon-192.png',
+  'icons/Icon-512.png',
+  'assets/AssetManifest.bin.json',
+  'assets/FontManifest.json',
+  'assets/assets/data/sessions.json',
+  'assets/assets/data/venue.json',
+  'assets/assets/data/happenings.json',
+  'assets/assets/data/info.json',
+  'assets/assets/data/rooms_raw.json',
+];
+const NEVER_CACHE = ['sw.js', 'flutter_service_worker.js', 'version.json'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE).then((cache) =>
+      // Individually, so one missing file doesn't fail the install.
+      Promise.all(SHELL.map((u) => cache.add(u).catch(() => undefined)))
+    ).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((k) => k.startsWith('kubecon-companion-') && k !== CACHE)
+        .map((k) => caches.delete(k))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type !== 'cache-urls' || !Array.isArray(data.urls)) return;
+  event.waitUntil(caches.open(CACHE).then((cache) => Promise.all(
+    data.urls
+      .filter((u) => typeof u === 'string' && u.startsWith(self.location.origin))
+      .filter((u) => !NEVER_CACHE.some((n) => new URL(u).pathname.endsWith(n)))
+      .map((u) => cache.match(u).then((hit) => hit || cache.add(u).catch(() => undefined)))
+  )));
+});
+
+function isGoogleFont(url) {
+  return url.hostname === 'fonts.gstatic.com' || url.hostname === 'fonts.googleapis.com';
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  const sameOrigin = url.origin === self.location.origin;
+  if (!sameOrigin && !isGoogleFont(url)) return;
+  if (sameOrigin && NEVER_CACHE.some((n) => url.pathname.endsWith(n))) return;
+
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put('index.html', copy));
+        return res;
+      }).catch(() => caches.match('index.html', { ignoreSearch: true })
+        .then((r) => r || caches.match('./')))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.open(CACHE).then((cache) =>
+      cache.match(req, { ignoreSearch: sameOrigin }).then((cached) => {
+        const network = fetch(req).then((res) => {
+          if (res && (res.ok || res.type === 'opaque')) cache.put(req, res.clone());
+          return res;
+        }).catch(() => cached || Response.error());
+        return cached || network;
+      })
+    )
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((list) => {
+      for (const c of list) { if ('focus' in c) return c.focus(); }
+      return self.clients.openWindow('./?tab=now');
+    }));
+});

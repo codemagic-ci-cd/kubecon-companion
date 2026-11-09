@@ -1,0 +1,61 @@
+{
+ "wifi": null,
+ "codeOfConduct": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/code-of-conduct/",
+ "venueAddress": "Salt Palace Convention Center, 90 South West Temple, Salt Lake City, UT 84101",
+ "emergency": "Emergency: dial 911. First aid stations: Salt Palace Level 1 by Room 150 and outside Halls 2 + 3. Onsite Safety + Lost & Found Desk: Level 1, Lower Concourse, between Halls D and C. Nearest 24/7 hospital: Holy Cross Hospital - Salt Lake, 1050 East South Temple, 801-350-4111. Urgent care: Salt Lake InstaCare, 389 South 900 East, 385-282-2400 (8 AM-8 PM). SLC Police non-emergency: 801-799-3000. Code of conduct reports: eventconduct@cncf.io.",
+ "links": [
+  {
+   "title": "Official schedule",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/program/schedule/"
+  },
+  {
+   "title": "Venue + Travel",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/venue-travel/"
+  },
+  {
+   "title": "Venue map",
+   "url": "https://events.linuxfoundation.org/kcna26-venue-map"
+  },
+  {
+   "title": "Solutions Showcase map",
+   "url": "https://events.linuxfoundation.org/kcna26-expo-map"
+  },
+  {
+   "title": "Experiences",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/features-add-ons/experiences/"
+  },
+  {
+   "title": "Health + Safety",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/health-and-safety/"
+  },
+  {
+   "title": "Inclusion + Accessibility",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/inclusion-accessibility/"
+  },
+  {
+   "title": "FAQ",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/faq/"
+  },
+  {
+   "title": "Code of Conduct",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/code-of-conduct/"
+  },
+  {
+   "title": "Co-located events schedule",
+   "url": "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/co-located-events/cncf-hosted-co-located-schedule/"
+  },
+  {
+   "title": "Codemagic",
+   "url": "https://codemagic.io/"
+  }
+ ],
+ "sources": [
+  "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/program/schedule/",
+  "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/venue-travel/",
+  "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/health-and-safety/",
+  "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/inclusion-accessibility/",
+  "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/attend/faq/",
+  "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/features-add-ons/experiences/"
+ ],
+ "notes": "No public Wi-Fi details were published on the event site as of 2026-11-09."
+}

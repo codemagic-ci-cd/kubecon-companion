@@ -1,0 +1,280 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show AssetBundle, rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../data/directions.dart';
+import '../data/models.dart';
+import '../data/reminders.dart';
+import '../data/venue_time.dart';
+import '../services/notification_service.dart';
+
+/// Everything bundled in assets/data, parsed.
+class ConferenceData {
+  const ConferenceData({
+    required this.schedule,
+    required this.venue,
+    required this.happenings,
+    required this.info,
+    this.rawRoomNames = const {},
+  });
+
+  final ScheduleData schedule;
+  final Venue venue;
+  final List<Happening> happenings;
+  final ConferenceInfo info;
+  final Map<String, String> rawRoomNames;
+
+  List<Session> get sessions => schedule.sessions;
+
+  static Future<ConferenceData> load([AssetBundle? bundle]) async {
+    final b = bundle ?? rootBundle;
+    Future<Object?> read(String name) async {
+      try {
+        return jsonDecode(await b.loadString('assets/data/$name'));
+      } catch (e) {
+        debugPrint('Could not load $name: $e');
+        return null;
+      }
+    }
+
+    final results = await Future.wait([
+      read('sessions.json'),
+      read('venue.json'),
+      read('happenings.json'),
+      read('info.json'),
+      read('rooms_raw.json'),
+    ]);
+    return ConferenceData(
+      schedule: ScheduleData.fromJson(results[0]),
+      venue: results[1] == null ? Venue.empty() : Venue.fromJson(results[1]),
+      happenings: Happening.listFromJson(results[2]),
+      info: ConferenceInfo.fromJson(results[3]),
+      rawRoomNames: parseRawRoomNames(results[4]),
+    );
+  }
+
+  ResolvedLocation locate(String? roomId, {String? fallbackText}) =>
+      resolveLocation(
+        venue,
+        roomId,
+        rawNames: rawRoomNames,
+        fallbackText: fallbackText,
+      );
+
+  Session? session(String id) {
+    for (final s in sessions) {
+      if (s.id == id) return s;
+    }
+    return null;
+  }
+}
+
+/// App-wide state: data, saved sessions, settings, clock and reminders.
+class AppState extends ChangeNotifier {
+  AppState({
+    required this.data,
+    required this.prefs,
+    required this.notifications,
+    this.clockOffset = Duration.zero,
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now {
+    _saved.addAll(prefs?.getStringList(_kSaved) ?? const []);
+    _reminded.addAll(prefs?.getStringList(_kReminded) ?? const []);
+    _notificationsEnabled = prefs?.getBool(_kNotify) ?? false;
+    _themeMode = switch (prefs?.getString(_kTheme)) {
+      'light' => ThemeMode.light,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.dark,
+    };
+    notifications.onFire = (r) {
+      _lastFired = r;
+      notifyListeners();
+    };
+  }
+
+  static const _kSaved = 'saved_sessions';
+  static const _kReminded = 'reminded_sessions';
+  static const _kNotify = 'notifications_enabled';
+  static const _kTheme = 'theme_mode';
+
+  final ConferenceData data;
+
+  /// Null when browser storage is unavailable; settings then live in memory.
+  final SharedPreferences? prefs;
+  final NotificationService notifications;
+  final Duration clockOffset;
+  final DateTime Function() _clock;
+
+  final _saved = <String>{};
+  final _reminded = <String>{};
+  bool _notificationsEnabled = false;
+  ThemeMode _themeMode = ThemeMode.dark;
+  NotificationPermission _permission = NotificationPermission.notDetermined;
+  Reminder? _lastFired;
+  Timer? _ticker;
+  Timer? _rescheduleDebounce;
+
+  /// "Now" in UTC. A clock offset (web: `?now=2026-11-10T12:40`) lets you
+  /// demo the app as if it were a conference day.
+  DateTime get now => _clock().toUtc().add(clockOffset);
+
+  Set<String> get saved => _saved;
+  Set<String> get reminded => _reminded;
+  bool get notificationsEnabled => _notificationsEnabled;
+  ThemeMode get themeMode => _themeMode;
+  NotificationPermission get permission => _permission;
+
+  /// The last reminder fired by an in-app timer (web), for the banner.
+  Reminder? get lastFired => _lastFired;
+  void dismissFired() {
+    _lastFired = null;
+    notifyListeners();
+  }
+
+  Future<void> start() async {
+    await notifications.init();
+    _permission = await notifications.permission();
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      notifyListeners();
+    });
+    await _reschedule();
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _rescheduleDebounce?.cancel();
+    super.dispose();
+  }
+
+  bool isSaved(String id) => _saved.contains(id);
+  bool isReminded(String id) => _reminded.contains(id);
+
+  void toggleSaved(String id) {
+    _saved.contains(id) ? _saved.remove(id) : _saved.add(id);
+    prefs?.setStringList(_kSaved, _saved.toList());
+    notifyListeners();
+    _scheduleSoon();
+  }
+
+  /// Returns true when the reminder is now on.
+  Future<bool> toggleReminder(String id) async {
+    if (_reminded.remove(id)) {
+      prefs?.setStringList(_kReminded, _reminded.toList());
+      notifyListeners();
+      _scheduleSoon();
+      return false;
+    }
+    _reminded.add(id);
+    prefs?.setStringList(_kReminded, _reminded.toList());
+    notifyListeners();
+    if (!_notificationsEnabled ||
+        _permission == NotificationPermission.notDetermined) {
+      await setNotificationsEnabled(true);
+    }
+    _scheduleSoon();
+    return true;
+  }
+
+  Future<NotificationPermission> setNotificationsEnabled(bool on) async {
+    if (on) {
+      _permission = await notifications.requestPermission();
+    }
+    _notificationsEnabled = on;
+    await prefs?.setBool(_kNotify, on);
+    await _reschedule();
+    notifyListeners();
+    return _permission;
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    prefs?.setString(_kTheme, mode.name);
+    notifyListeners();
+  }
+
+  List<Reminder> get upcomingReminders => buildReminders(
+    sessions: data.sessions,
+    happenings: data.happenings,
+    venue: data.venue,
+    now: now,
+    saved: _saved,
+    reminded: _reminded,
+    rawRoomNames: data.rawRoomNames,
+  );
+
+  void _scheduleSoon() {
+    _rescheduleDebounce?.cancel();
+    _rescheduleDebounce = Timer(const Duration(milliseconds: 400), _reschedule);
+  }
+
+  Future<void> _reschedule() async {
+    if (!_notificationsEnabled) {
+      await notifications.cancelAll();
+      return;
+    }
+    await notifications.schedule(upcomingReminders);
+  }
+
+  // ---- Derived views -----------------------------------------------------
+
+  List<Session> sessionsOn(DateTime day) =>
+      data.sessions.where((s) => sameDay(venueDay(s.start), day)).toList();
+
+  List<Session> get savedSessions =>
+      data.sessions.where((s) => _saved.contains(s.id)).toList();
+
+  /// Happenings and highlighted/saved sessions, merged for the Now tab.
+  List<TimelineItem> timelineFor(DateTime day) {
+    final items = <TimelineItem>[];
+    final seen = <String>{};
+    for (final h in data.happenings) {
+      if (!sameDay(venueDay(h.start), day) || h.isFacility) continue;
+      seen.add('${h.start.toIso8601String()}|${h.kind}');
+      items.add(TimelineItem.happening(h));
+    }
+    for (final s in data.sessions) {
+      if (!sameDay(venueDay(s.start), day)) continue;
+      final mine = _saved.contains(s.id) || _reminded.contains(s.id);
+      if (!mine && !s.highlight) continue;
+      if (!mine && s.type == 'keynote') continue; // covered by keynote block
+      if (!mine && seen.contains('${s.start.toIso8601String()}|${s.type}')) {
+        continue;
+      }
+      items.add(TimelineItem.session(s, mine: mine));
+    }
+    items.sort((a, b) => a.start.compareTo(b.start));
+    return items;
+  }
+
+  List<Happening> facilitiesOn(DateTime day) => data.happenings
+      .where((h) => h.isFacility && sameDay(venueDay(h.start), day))
+      .toList();
+}
+
+/// A row in the Now tab: either a happening or a session.
+class TimelineItem {
+  TimelineItem.happening(Happening this.happening)
+    : session = null,
+      mine = false;
+  TimelineItem.session(Session this.session, {this.mine = false})
+    : happening = null;
+
+  final Happening? happening;
+  final Session? session;
+  final bool mine;
+
+  String get title => happening?.title ?? session!.title;
+  DateTime get start => happening?.start ?? session!.start;
+  DateTime get end => happening?.end ?? session!.end;
+  String get kind => happening?.kind ?? session!.type;
+  String? get roomId => happening?.roomId ?? session?.roomId;
+  String? get locationText => happening?.location;
+  String get description => happening?.description ?? session!.description;
+
+  bool isLive(DateTime now) => !now.isBefore(start) && now.isBefore(end);
+}

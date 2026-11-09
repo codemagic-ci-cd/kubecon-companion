@@ -1,0 +1,359 @@
+{
+ "source": "https://sessionize.com/api/v2/svi82w6c/view/All",
+ "rooms": [
+  {
+   "id": "offsite-ac-hotel-downtown",
+   "name": "AC Hotel Salt Lake City Downtown",
+   "address": "225 West 200 South, Salt Lake City, UT 84101",
+   "lat": 40.7647558,
+   "lng": -111.8973346,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://maps.app.goo.gl/fkMC4eTiTrHwW2TY6",
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-clark-planetarium",
+   "name": "Clark Planetarium",
+   "address": "110 South 400 West, Salt Lake City, UT 84101",
+   "lat": 40.7667,
+   "lng": -111.9029,
+   "approx": true,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": null,
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-edison-house",
+   "name": "Edison House",
+   "address": "Edison St, Salt Lake City, UT 84111",
+   "lat": 40.7617551,
+   "lng": -111.8989095,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://www.google.com/maps/place/Edison+House/@40.7617551,-111.8989095,17z/data=!3m1!4b1!4m6!3m5!1s0x8752f5a91f112ad5:0xb9bcf1b4eec7f6d2!8m2!3d40.7617511!4d-111.8963346!16s%2Fg%2F11fsy9332x?entry=ttu&g_ep=EgoyMDI2MDkxNi4wIKXMDSoASAFQAw%3D%3D",
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-gallivan-center",
+   "name": "Gallivan Center",
+   "address": "50 E 200 S, Salt Lake City, UT 84111",
+   "lat": 40.7655,
+   "lng": -111.8892,
+   "approx": true,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": null,
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-hilton-city-center",
+   "name": "Hilton Salt Lake City Center",
+   "address": "255 South West Temple, Salt Lake City, UT 84101",
+   "lat": 40.7618,
+   "lng": -111.8945,
+   "approx": true,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": null,
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-kimpton-monaco",
+   "name": "Kimpton Hotel Monaco Salt Lake City (Floor 2, Paris Ballroom)",
+   "address": "15 W 200 S, Salt Lake City, UT 84101",
+   "lat": 40.7646976,
+   "lng": -111.8948309,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://maps.app.goo.gl/4wuq7knu3K2wWpgd7",
+   "sessionCount": 2
+  },
+  {
+   "id": "offsite-le-meridien",
+   "name": "Le Meridien Salt Lake City Downtown",
+   "address": "131 S 300 W, Salt Lake City, UT 84101",
+   "lat": 40.7662291,
+   "lng": -111.899423,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://maps.app.goo.gl/HDkTYVTG5RKeNBia7",
+   "sessionCount": 2
+  },
+  {
+   "id": "offsite-marriott-city-center",
+   "name": "Salt Lake City Marriott City Center",
+   "address": "220 S State St, Salt Lake City, UT 84111",
+   "lat": 40.764351,
+   "lng": -111.8911,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://www.google.com/maps/place/Salt+Lake+City+Marriott+City+Center/@40.764351,-111.8911377,17z/data=!4m9!3m8!1s0x8752f50e3f7cfce1:0x91c02647cb40f017!5m2!4m1!1i2!8m2!3d40.764347!4d-111.8885574!16s%2Fg%2F1thw_y37?entry=tts&g_ep=EgoyMDI2MDkyMi4wIPu8ASoASAFQAw%3D%3D&skid=642daeed-2fb8-4e58-a672-959743edc2ee",
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-marriott-downtown-city-creek",
+   "name": "Salt Lake Marriott Downtown at City Creek",
+   "address": "75 S W Temple St, Salt Lake City, UT 84101",
+   "lat": 40.7684,
+   "lng": -111.8916,
+   "approx": true,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": null,
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-pierpont-place",
+   "name": "Pierpont Place",
+   "address": "W Pierpont Ave, Salt Lake City, UT 84101",
+   "lat": 40.7635741,
+   "lng": -111.8960208,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://maps.app.goo.gl/nit2L3acKd2Zu6sYA",
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-radisson-downtown",
+   "name": "Radisson Hotel Salt Lake City Downtown",
+   "address": "215 W South Temple, Salt Lake City, UT 84101",
+   "lat": 40.768988,
+   "lng": -111.8978173,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://maps.app.goo.gl/6CunVUULrjYJT6kdA",
+   "sessionCount": 1
+  },
+  {
+   "id": "offsite-utah-moca",
+   "name": "Utah Museum of Contemporary Art",
+   "address": "20 S West Temple, Salt Lake City, UT 84101",
+   "lat": 40.7683461,
+   "lng": -111.8947354,
+   "approx": false,
+   "raw": "Off-Site Location",
+   "kind": "offsite",
+   "mapUrl": "https://www.google.com/maps/place/Utah+Museum+of+Contemporary+Art/@40.7683501,-111.8973103,16z/data=!3m1!4b1!4m6!3m5!1s0x8752f50640f09e71:0xb9773cedf80c8d30!8m2!3d40.7683461!4d-111.8947354!16s%2Fg%2F11b8_pfyp2?entry=ttu&g_ep=EgoyMDI2MDkxNi4wIKXMDSoASAFQAw%3D%3D",
+   "sessionCount": 1
+  },
+  {
+   "id": "200-south-entrance-south",
+   "raw": "Salt Palace | 200 South Entrance (South)",
+   "kind": "onsite",
+   "sessionCount": 5
+  },
+  {
+   "id": "hyatt-l2-salt-lake-ballroom-c",
+   "raw": "Hyatt Regency | Level 2 | Salt Lake Ballroom C",
+   "kind": "onsite",
+   "sessionCount": 17
+  },
+  {
+   "id": "hyatt-l2-salt-lake-ballroom-de",
+   "raw": "Hyatt Regency | Level 2 | Salt Lake Ballroom DE",
+   "kind": "onsite",
+   "sessionCount": 16
+  },
+  {
+   "id": "hyatt-l3-park-city",
+   "raw": "Hyatt Regency | Level 3 | Park City",
+   "kind": "onsite",
+   "sessionCount": 1
+  },
+  {
+   "id": "hyatt-l4-regency-ballroom-a",
+   "raw": "Hyatt Regency | Level 4 | Regency Ballroom A",
+   "kind": "onsite",
+   "sessionCount": 9
+  },
+  {
+   "id": "hyatt-l4-regency-ballroom-b",
+   "raw": "Hyatt Regency | Level 4 | Regency Ballroom B",
+   "kind": "onsite",
+   "sessionCount": 8
+  },
+  {
+   "id": "hyatt-l4-regency-ballroom-b-d",
+   "raw": "Hyatt Regency | Level 4 | Regency Ballroom B-D",
+   "kind": "onsite",
+   "sessionCount": 51
+  },
+  {
+   "id": "hyatt-l4-regency-ballroom-cd",
+   "raw": "Hyatt Regency | Level 4 | Regency Ballroom CD",
+   "kind": "onsite",
+   "sessionCount": 23
+  },
+  {
+   "id": "hyatt-l5-capitol-reef",
+   "raw": "Hyatt Regency | Level 5 | Capitol Reef",
+   "kind": "onsite",
+   "sessionCount": 2
+  },
+  {
+   "id": "hyatt-lobby",
+   "raw": "Hyatt Regency Lobby",
+   "kind": "onsite",
+   "sessionCount": 1
+  },
+  {
+   "id": "l1-151",
+   "raw": "Salt Palace | Level 1 | 151",
+   "kind": "onsite",
+   "sessionCount": 18
+  },
+  {
+   "id": "l1-grand-ballroom-ace",
+   "raw": "Salt Palace | Level 1 | Grand Ballroom ACE",
+   "kind": "onsite",
+   "sessionCount": 18
+  },
+  {
+   "id": "l1-grand-ballroom-bdf",
+   "raw": "Salt Palace | Level 1 | Grand Ballroom BDF",
+   "kind": "onsite",
+   "sessionCount": 18
+  },
+  {
+   "id": "l1-grand-ballroom-gi",
+   "raw": "Salt Palace | Level 1 | Grand Ballroom GI",
+   "kind": "onsite",
+   "sessionCount": 17
+  },
+  {
+   "id": "l1-grand-ballroom-h",
+   "raw": "Salt Palace | Level 1 | Grand Ballroom H",
+   "kind": "onsite",
+   "sessionCount": 19
+  },
+  {
+   "id": "l1-grand-ballroom-j",
+   "raw": "Salt Palace | Level 1 | Grand Ballroom J",
+   "kind": "onsite",
+   "sessionCount": 15
+  },
+  {
+   "id": "l1-hall-de",
+   "raw": "Salt Palace | Level 1 | Hall DE",
+   "kind": "onsite",
+   "sessionCount": 35
+  },
+  {
+   "id": "l1-halls-a-c-halls-1-5",
+   "raw": "Salt Palace | Level 1 | Halls A-C, Halls 1-5",
+   "kind": "onsite",
+   "sessionCount": 31
+  },
+  {
+   "id": "l1-north-grand-ballroom-foyer",
+   "raw": "Salt Palace | Level 1 | North Grand Ballroom Foyer",
+   "kind": "onsite",
+   "sessionCount": 1
+  },
+  {
+   "id": "l1-solutions-showcase-hall-1-alpine-overlook-zone-demo-theater",
+   "raw": "Salt Palace | Level 1 | Solutions Showcase | Hall 1 | Alpine Overlook Zone | Demo Theater",
+   "kind": "onsite",
+   "sessionCount": 39
+  },
+  {
+   "id": "l1-solutions-showcase-hall-1-alpine-overlook-zone-network-nook",
+   "raw": "Salt Palace | Level 1 | Solutions Showcase | Hall 1 | Alpine Overlook Zone | Network Nook",
+   "kind": "onsite",
+   "sessionCount": 5
+  },
+  {
+   "id": "l1-solutions-showcase-hall-5-cosmic-canyon-zone-project-pavilion",
+   "raw": "Salt Palace | Level 1 | Solutions Showcase | Hall 5 | Cosmic Canyon Zone | Project Pavilion",
+   "kind": "onsite",
+   "sessionCount": 26
+  },
+  {
+   "id": "l1-solutions-showcase-hall-b-starlight-summit-zone",
+   "raw": "Salt Palace | Level 1 | Solutions Showcase | Hall B | Starlight Summit Zone",
+   "kind": "onsite",
+   "sessionCount": 12
+  },
+  {
+   "id": "l1-solutions-showcase-halls-5-cosmic-canyon-zone",
+   "raw": "Salt Palace | Level 1 | Solutions Showcase | Halls 5 | Cosmic Canyon Zone",
+   "kind": "onsite",
+   "sessionCount": 53
+  },
+  {
+   "id": "l2-250-a-c",
+   "raw": "Salt Palace | Level 2 | 250 A-C",
+   "kind": "onsite",
+   "sessionCount": 19
+  },
+  {
+   "id": "l2-250-d-f",
+   "raw": "Salt Palace | Level 2 | 250 D-F",
+   "kind": "onsite",
+   "sessionCount": 17
+  },
+  {
+   "id": "l2-251-a-c",
+   "raw": "Salt Palace | Level 2 | 251 A-C",
+   "kind": "onsite",
+   "sessionCount": 17
+  },
+  {
+   "id": "l2-251-d-f",
+   "raw": "Salt Palace | Level 2 | 251 D-F",
+   "kind": "onsite",
+   "sessionCount": 17
+  },
+  {
+   "id": "l2-254",
+   "raw": "Salt Palace | Level 2 | 254",
+   "kind": "onsite",
+   "sessionCount": 18
+  },
+  {
+   "id": "l2-255-a",
+   "raw": "Salt Palace | Level 2 | 255 A",
+   "kind": "onsite",
+   "sessionCount": 9
+  },
+  {
+   "id": "l2-255-bc",
+   "raw": "Salt Palace | Level 2 | 255 BC",
+   "kind": "onsite",
+   "sessionCount": 18
+  },
+  {
+   "id": "l2-255-d",
+   "raw": "Salt Palace | Level 2 | 255 D",
+   "kind": "onsite",
+   "sessionCount": 8
+  },
+  {
+   "id": "l2-255-ef",
+   "raw": "Salt Palace | Level 2 | 255 EF",
+   "kind": "onsite",
+   "sessionCount": 17
+  },
+  {
+   "id": "l2-east-registration",
+   "raw": "Salt Palace | Level 2 | East Registration",
+   "kind": "onsite",
+   "sessionCount": 5
+  },
+  {
+   "id": "l2-upper-mezzanine",
+   "raw": "Salt Palace | Level 2 | Upper Mezzanine",
+   "kind": "onsite",
+   "sessionCount": 1
+  }
+ ]
+}

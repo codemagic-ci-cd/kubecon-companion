@@ -1,0 +1,24 @@
+{
+  "name": "KubeCon Companion",
+  "short_name": "KubeCon",
+  "id": "/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#01091A",
+  "theme_color": "#01091A",
+  "description": "Schedule, indoor venue map with directions and reminders for KubeCon + CloudNativeCon North America 2026. Built and shipped with Codemagic.",
+  "orientation": "any",
+  "categories": ["events", "productivity", "navigation"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/Icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/Icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/Icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Happening now", "url": "./?tab=now", "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }] },
+    { "name": "Venue map", "url": "./?tab=map", "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }] }
+  ]
+}

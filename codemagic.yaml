@@ -1,0 +1,130 @@
+# Codemagic CI/CD for KubeCon Companion: one Flutter codebase -> web (PWA),
+# Android and iOS. Docs: https://docs.codemagic.io/yaml-basic-configuration/yaml-getting-started/
+definitions:
+  instance: &instance
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+  env: &env
+    flutter: stable
+    xcode: latest
+    cocoapods: default
+  triggering: &triggering
+    events:
+      - push
+    branch_patterns:
+      - pattern: main
+        include: true
+        source: true
+    cancel_previous_builds: true
+  scripts:
+    - &get_packages
+      name: Get packages
+      script: flutter pub get
+    - &analyze
+      name: Analyze
+      script: flutter analyze
+    - &test
+      name: Unit and widget tests
+      script: |
+        mkdir -p test-results
+        flutter test --machine > test-results/flutter.json
+      test_report: test-results/flutter.json
+
+workflows:
+  web:
+    name: Web (PWA) to Firebase Hosting
+    <<: *instance
+    environment:
+      <<: *env
+      groups:
+        - firebase # FIREBASE_TOKEN (and optionally FIREBASE_PROJECT)
+      vars:
+        FIREBASE_PROJECT: kubecon-companion
+    triggering: *triggering
+    scripts:
+      - *get_packages
+      - *analyze
+      - *test
+      - name: Build web
+        script: |
+          # Self-host CanvasKit so the PWA works fully offline.
+          flutter build web --release --no-web-resources-cdn \
+            --build-number=$BUILD_NUMBER
+          cd build/web && zip -qr ../../web-build.zip . && cd -
+      - name: Deploy to Firebase Hosting
+        script: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "FIREBASE_TOKEN is not set (env group 'firebase'); skipping deploy."
+            exit 0
+          fi
+          npm i -g firebase-tools
+          firebase deploy --only hosting --project $FIREBASE_PROJECT --token $FIREBASE_TOKEN
+    artifacts:
+      - web-build.zip
+
+  android:
+    name: Android
+    <<: *instance
+    environment:
+      <<: *env
+      # Optional: upload a keystore in Codemagic and reference it here to sign
+      # releases. Without it, builds are signed with the debug key.
+      # android_signing:
+      #   - kubecon_companion_keystore
+    triggering: *triggering
+    scripts:
+      - *get_packages
+      - *test
+      - name: Build APK and App Bundle
+        script: |
+          flutter build apk --release --build-number=$BUILD_NUMBER
+          flutter build appbundle --release --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/mapping/release/mapping.txt
+
+  ios-simulator:
+    name: iOS simulator build (unsigned, for demos)
+    <<: *instance
+    environment:
+      <<: *env
+    triggering: *triggering
+    scripts:
+      - *get_packages
+      - name: Build for iOS simulator
+        script: |
+          flutter build ios --simulator --debug --no-codesign
+          cd build/ios/iphonesimulator
+          zip -qr ../../../KubeConCompanion-simulator.zip Runner.app
+    artifacts:
+      - KubeConCompanion-simulator.zip
+
+  ios-release:
+    name: iOS release to TestFlight
+    <<: *instance
+    integrations:
+      app_store_connect: codemagic # name of the App Store Connect API key in Codemagic
+    environment:
+      <<: *env
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: io.codemagic.kubeconCompanion
+    triggering: *triggering
+    scripts:
+      - *get_packages
+      - *test
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          flutter build ipa --release \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

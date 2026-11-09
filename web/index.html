@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Replaced by `flutter build web --base-href`. -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Schedule, indoor venue map with directions and reminders for KubeCon + CloudNativeCon North America 2026. Built and shipped with Codemagic.">
+  <meta name="theme-color" content="#01091A">
+  <meta name="color-scheme" content="dark light">
+
+  <!-- iOS home screen -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KubeCon">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>KubeCon Companion</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #01091A; }
+    #splash {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #D2DBEE; letter-spacing: -0.2px;
+    }
+    #splash img { width: 72px; height: 72px; border-radius: 16px; }
+    #splash p { margin: 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="splash" aria-live="polite">
+    <img src="icons/Icon-192.png" alt="">
+    <p>Loading KubeCon Companion…</p>
+  </div>
+  <script>
+    // Offline support: cache the app shell and everything it loads.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').then(function (reg) {
+          // Cache what this first visit already downloaded (before the
+          // worker was in control), so the next visit works offline.
+          navigator.serviceWorker.ready.then(function (ready) {
+            var urls = performance.getEntriesByType('resource')
+              .map(function (e) { return e.name; })
+              .filter(function (u) { return u.indexOf(location.origin) === 0; });
+            urls.push(location.href);
+            (ready.active || reg.active) && (ready.active || reg.active)
+              .postMessage({ type: 'cache-urls', urls: urls });
+          });
+        }).catch(function (e) { console.warn('Service worker failed', e); });
+      });
+    }
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

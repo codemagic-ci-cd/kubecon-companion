@@ -1,0 +1,368 @@
+import 'package:flutter/material.dart';
+
+import '../data/directions.dart';
+import '../data/models.dart';
+import '../state/app_scope.dart';
+import '../theme/brand.dart';
+import '../widgets/common.dart';
+import '../widgets/venue_map.dart';
+import 'map_screen.dart';
+
+IconData stepIcon(StepKind kind) => switch (kind) {
+  StepKind.start => Icons.door_front_door_outlined,
+  StepKind.escalator => Icons.escalator,
+  StepKind.elevator => Icons.elevator_outlined,
+  StepKind.stairs => Icons.stairs_outlined,
+  StepKind.levelChange => Icons.swap_vert,
+  StepKind.arrive => Icons.flag_outlined,
+  StepKind.walk => Icons.straight,
+  StepKind.note => Icons.lightbulb_outline,
+};
+
+/// Step-by-step directions to a room or an off-site venue.
+class DirectionsScreen extends StatelessWidget {
+  const DirectionsScreen({super.key, required this.roomId});
+  final String roomId;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final loc = app.data.locate(roomId);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Directions')),
+      body: switch (loc) {
+        RoomLocation l => _RoomDirections(location: l, venue: app.data.venue),
+        OffsiteLocation o => _OffsiteDirections(venue: o.venue),
+        UnknownLocation u => EmptyState(
+          icon: Icons.not_listed_location_outlined,
+          title: u.label,
+          message: 'This location is not on our venue map yet. Ask at any Info Desk or follow onsite signage.',
+        ),
+      },
+    );
+  }
+}
+
+class _RoomDirections extends StatelessWidget {
+  const _RoomDirections({required this.location, required this.venue});
+  final RoomLocation location;
+  final Venue venue;
+
+  @override
+  Widget build(BuildContext context) {
+    final room = location.room;
+    final steps = buildSteps(room.directions);
+    final text = Theme.of(context).textTheme;
+    final levelChanges = steps.where((s) => s.isLevelChange).length;
+
+    void showOnMap() => Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => MapScreen(focusRoomId: room.id)),
+    );
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      children: [
+        Text(room.name, style: text.headlineSmall),
+        const SizedBox(height: 4),
+        Text(
+          [
+            room.building,
+            location.levelLabel,
+          ].whereType<String>().toSet().join(' · '),
+          style: text.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(Brand.radiusCard),
+          child: Container(
+            height: 200,
+            decoration: context.brand.cardDecoration,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: VenueMapView(
+                      venue: venue,
+                      levelId: room.levelId,
+                      highlightRoomId: room.id,
+                      route: planRoute(venue, room),
+                      interactive: false,
+                      focusOnHighlight: false,
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(onTap: showOnMap),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: PrimaryButton(
+            icon: Icons.map_outlined,
+            label: 'Show on map',
+            onPressed: showOnMap,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Pill('${steps.length} steps', icon: Icons.format_list_numbered),
+            if (levelChanges > 0)
+              Pill(
+                levelChanges == 1
+                    ? '1 level change'
+                    : '$levelChanges level changes',
+                icon: Icons.swap_vert,
+                color: Brand.swwYellow,
+              ),
+            const Pill(
+              'From the 200 South entrance',
+              icon: Icons.door_front_door_outlined,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (steps.isEmpty)
+          Text(
+            'No step-by-step directions for this room yet. Use the map and onsite signage.',
+            style: text.bodyMedium,
+          )
+        else
+          StepList(steps: steps),
+        if (venue.isApproximate) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Directions are based on the official venue map and may be approximate. Follow onsite signage and ask staff at any Info Desk.',
+            style: text.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Numbered steps; level changes are shown in a highlighted card with an
+/// escalator/elevator/stairs icon.
+class StepList extends StatelessWidget {
+  const StepList({super.key, required this.steps});
+  final List<DirectionStep> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final b = context.brand;
+    return Column(
+      children: [
+        for (var i = 0; i < steps.length; i++)
+          _StepRow(
+            number: steps
+                .take(i + 1)
+                .where((s) => s.kind != StepKind.note)
+                .length,
+            step: steps[i],
+            isLast: i == steps.length - 1,
+            text: text,
+            surfaces: b,
+          ),
+      ],
+    );
+  }
+}
+
+class _StepRow extends StatelessWidget {
+  const _StepRow({
+    required this.number,
+    required this.step,
+    required this.isLast,
+    required this.text,
+    required this.surfaces,
+  });
+
+  final int number;
+  final DirectionStep step;
+  final bool isLast;
+  final TextTheme text;
+  final BrandSurfaces surfaces;
+
+  @override
+  Widget build(BuildContext context) {
+    final change = step.isLevelChange;
+    final arrive = step.kind == StepKind.arrive;
+    final note = step.kind == StepKind.note;
+    final badgeColor = change
+        ? Brand.swwYellow
+        : (arrive ? Brand.neverBlue : surfaces.subtle);
+    final badgeFg = change
+        ? Brand.darkPage
+        : (arrive ? Colors.white : surfaces.heading);
+
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (change)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                Icon(stepIcon(step.kind), size: 18, color: Brand.swwYellow),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    step.toLevel != null
+                        ? 'Change level · to level ${step.toLevel}'
+                        : 'Change level',
+                    style: text.labelLarge?.copyWith(color: Brand.swwYellow),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Text(
+          step.text,
+          style:
+              (change || arrive
+                      ? text.bodyLarge
+                      : (note ? text.bodySmall : text.bodyMedium))
+                  ?.copyWith(color: change || arrive ? surfaces.heading : null),
+        ),
+      ],
+    );
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 36,
+            child: Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: change || arrive || note
+                      ? Icon(stepIcon(step.kind), size: 18, color: badgeFg)
+                      : Text(
+                          '$number',
+                          style: text.labelLarge?.copyWith(color: badgeFg),
+                        ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      color: surfaces.border,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: change
+                  ? Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: surfaces.subtle,
+                        borderRadius: BorderRadius.circular(Brand.radiusMd),
+                      ),
+                      child: body,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: body,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OffsiteDirections extends StatelessWidget {
+  const _OffsiteDirections({required this.venue});
+  final OffsiteVenue venue;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final raw = venue.directions.isEmpty
+        ? ['Exit the Salt Palace and follow the address below']
+        : venue.directions;
+    final steps = [
+      for (var i = 0; i < raw.length; i++)
+        DirectionStep(
+          raw[i],
+          i == 0
+              ? StepKind.start
+              : (i == raw.length - 1 ? StepKind.arrive : StepKind.walk),
+        ),
+    ];
+    final query = venue.lat != null && venue.lng != null
+        ? '${venue.lat},${venue.lng}'
+        : (venue.address ?? venue.name);
+    final mapsUrl =
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}';
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      children: [
+        Text(venue.name, style: text.headlineSmall),
+        const SizedBox(height: 4),
+        if (venue.address != null)
+          SelectableText(venue.address!, style: text.bodyMedium),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            const Pill('Off-site', icon: Icons.location_city),
+            if (venue.walkMinutes != null)
+              Pill(
+                '${venue.walkMinutes} min walk',
+                icon: Icons.directions_walk,
+                color: Brand.neverBlue,
+              ),
+            const Pill(
+              'From the 200 South entrance',
+              icon: Icons.door_front_door_outlined,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        StepList(steps: steps),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: SubtleButton(
+            icon: Icons.open_in_new,
+            label: 'Open in maps',
+            onPressed: () => openLink(context, mapsUrl),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Walking times are estimates. Bring your badge: you need it to get back into the venue.',
+          style: text.bodySmall,
+        ),
+      ],
+    );
+  }
+}
