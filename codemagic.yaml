@@ -64,9 +64,11 @@ workflows:
 
   android:
     name: Android
-    <<: *instance
+    # Android needs no Xcode: Linux machines are cheaper and keep the Mac pool free for iOS.
+    instance_type: linux_x2
+    max_build_duration: 60
     environment:
-      <<: *env
+      flutter: stable
       # Optional: upload a keystore in Codemagic and reference it here to sign
       # releases. Without it, builds are signed with the debug key.
       # android_signing:
