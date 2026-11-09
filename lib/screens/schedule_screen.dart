@@ -165,13 +165,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final app = AppScope.of(context);
     final filterCount = _types.length + _tracks.length;
     final today = venueDay(app.now);
+    // Search and filters both look across every conference day.
+    final searching = _query.isNotEmpty || filterCount > 0;
 
     return Scaffold(
       appBar: AppBar(
         title: const AppBarTitle(),
         actions: const [ShareAppAction(), SettingsAction()],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(_query.isEmpty ? 112 : 64),
+          preferredSize: Size.fromHeight(searching ? 64 : 112),
           child: Column(
             children: [
               Padding(
@@ -222,7 +224,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ],
                 ),
               ),
-              if (_query.isEmpty)
+              if (!searching)
                 TabBar(
                   controller: _tabs,
                   tabs: [
@@ -234,7 +236,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           ),
         ),
       ),
-      body: _query.isNotEmpty
+      body: searching
           ? _SearchResults(
               sessions: app.data.sessions
                   .where((s) => _matches(app, s))
