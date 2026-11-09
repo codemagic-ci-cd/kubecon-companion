@@ -9,6 +9,7 @@ import '../data/directions.dart';
 import '../data/models.dart';
 import '../data/official_map.dart';
 import '../data/reminders.dart';
+import '../data/sponsors.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
 
@@ -87,8 +88,15 @@ class ConferenceData {
   }
 }
 
-/// Loading state of details.json.
+/// Loading state of details.json and sponsors.json.
 enum DetailsStatus { loading, loaded, failed }
+
+/// A request to show a venue room on the Map tab (see [AppState.showOnMap]).
+/// A new object each time, so asking for the same room twice still fires.
+class MapFocusRequest {
+  MapFocusRequest(this.roomId);
+  final String roomId;
+}
 
 /// A start point the user picked for directions.
 class DirectionsStart {
@@ -111,9 +119,14 @@ class AppState extends ChangeNotifier {
     this.clockOffset = Duration.zero,
     DateTime Function()? clock,
     ConferenceDetails? details,
+    List<Sponsor>? sponsors,
   }) : _clock = clock ?? DateTime.now,
        _details = details,
        _detailsStatus = details == null
+           ? DetailsStatus.loading
+           : DetailsStatus.loaded,
+       _sponsors = sponsors ?? const [],
+       _sponsorsStatus = sponsors == null
            ? DetailsStatus.loading
            : DetailsStatus.loaded {
     _saved.addAll(prefs?.getStringList(_kSaved) ?? const []);
@@ -161,6 +174,14 @@ class AppState extends ChangeNotifier {
   ConferenceDetails? _details;
   DetailsStatus _detailsStatus;
   Future<void>? _detailsLoad;
+  List<Sponsor> _sponsors;
+  DetailsStatus _sponsorsStatus;
+  Future<void>? _sponsorsLoad;
+
+  /// Asks the Map tab to switch in and select a room (Expo "Show on map").
+  final mapFocus = ValueNotifier<MapFocusRequest?>(null);
+
+  void showOnMap(String roomId) => mapFocus.value = MapFocusRequest(roomId);
   Timer? _ticker;
   Timer? _rescheduleDebounce;
 
@@ -215,6 +236,36 @@ class AppState extends ChangeNotifier {
     }();
   }
 
+  /// Sponsors and booths, tier then name order; empty until loaded.
+  List<Sponsor> get sponsors => _sponsors;
+  DetailsStatus get sponsorsStatus => _sponsorsStatus;
+
+  /// Loads sponsors.json after the first frame, like [loadDetails]; safe to
+  /// call again to retry after a failure.
+  Future<void> loadSponsors([AssetBundle? bundle]) {
+    if (_sponsorsStatus == DetailsStatus.loaded) return Future.value();
+    return _sponsorsLoad ??= () async {
+      if (_sponsorsStatus != DetailsStatus.loading) {
+        _sponsorsStatus = DetailsStatus.loading;
+        notifyListeners();
+      }
+      try {
+        final raw = await (bundle ?? rootBundle).loadString(
+          'assets/data/sponsors.json',
+          cache: false,
+        );
+        _sponsors = Sponsor.listFromJson(jsonDecode(raw));
+        _sponsorsStatus = DetailsStatus.loaded;
+      } catch (e) {
+        debugPrint('Could not load sponsors.json: $e');
+        _sponsorsStatus = DetailsStatus.failed;
+      } finally {
+        _sponsorsLoad = null;
+      }
+      notifyListeners();
+    }();
+  }
+
   Future<void> start() async {
     await notifications.init();
     _permission = await notifications.permission();
@@ -229,6 +280,7 @@ class AppState extends ChangeNotifier {
   void dispose() {
     _ticker?.cancel();
     _rescheduleDebounce?.cancel();
+    mapFocus.dispose();
     super.dispose();
   }
 

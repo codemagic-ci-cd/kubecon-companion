@@ -3,12 +3,23 @@ import 'package:flutter/material.dart';
 import '../data/agenda_link.dart';
 import '../services/web_url.dart';
 import '../state/app_scope.dart';
+import '../state/app_state.dart';
 import '../widgets/agenda_share.dart';
 
+import 'expo_screen.dart';
 import 'map_screen.dart';
 import 'now_screen.dart';
 import 'saved_screen.dart';
 import 'schedule_screen.dart';
+
+/// Bottom navigation tab indexes.
+abstract final class HomeTabs {
+  static const schedule = 0;
+  static const map = 1;
+  static const now = 2;
+  static const expo = 3;
+  static const saved = 4;
+}
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, this.initialTab = 0, this.pendingAgenda});
@@ -24,6 +35,31 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   late int _index = widget.initialTab;
+  AppState? _app;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final app = AppScope.read(context);
+    if (!identical(app, _app)) {
+      _app?.mapFocus.removeListener(_onMapFocus);
+      _app = app..mapFocus.addListener(_onMapFocus);
+    }
+  }
+
+  @override
+  void dispose() {
+    _app?.mapFocus.removeListener(_onMapFocus);
+    super.dispose();
+  }
+
+  /// "Show on map" from anywhere: close pushed screens and switch to Map,
+  /// which then selects the room.
+  void _onMapFocus() {
+    if (_app?.mapFocus.value == null || !mounted) return;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    if (_index != HomeTabs.map) setState(() => _index = HomeTabs.map);
+  }
 
   @override
   void initState() {
@@ -45,8 +81,9 @@ class _HomeShellState extends State<HomeShell> {
       index: _index,
       children: [
         const ScheduleScreen(),
-        MapScreen(active: _index == 1),
+        MapScreen(active: _index == HomeTabs.map),
         const NowScreen(),
+        const ExpoScreen(),
         const SavedScreen(),
       ],
     ),
@@ -68,6 +105,11 @@ class _HomeShellState extends State<HomeShell> {
           icon: Icon(Icons.bolt_outlined),
           selectedIcon: Icon(Icons.bolt),
           label: 'Now',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.storefront_outlined),
+          selectedIcon: Icon(Icons.storefront),
+          label: 'Expo',
         ),
         NavigationDestination(
           icon: Icon(Icons.star_outline_rounded),

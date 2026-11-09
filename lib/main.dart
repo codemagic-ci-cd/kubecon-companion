@@ -6,10 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/agenda_link.dart';
 import 'screens/home_shell.dart';
+import 'services/incoming_links.dart';
 import 'services/notification_service.dart';
 import 'state/app_scope.dart';
 import 'state/app_state.dart';
 import 'theme/brand.dart';
+import 'widgets/agenda_link_listener.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,15 +34,17 @@ Future<void> main() async {
     KubeConApp(
       state: state,
       // A shared agenda link lands on Saved, where the import ends up.
-      initialTab: agenda == null ? initialTabFor(Uri.base) : 3,
+      initialTab: agenda == null ? initialTabFor(Uri.base) : HomeTabs.saved,
       pendingAgenda: agenda,
+      links: incomingLinks(),
     ),
   );
   // Descriptions and bios (details.json) are not needed for the first screen:
   // fetch them once it is up, so slow networks show the schedule sooner.
-  WidgetsBinding.instance.addPostFrameCallback(
-    (_) => unawaited(state.loadDetails()),
-  );
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(state.loadDetails());
+    unawaited(state.loadSponsors());
+  });
   unawaited(state.start());
 }
 
@@ -60,12 +64,13 @@ String? agendaParam(Uri uri) {
   return v == null || v.isEmpty ? null : v;
 }
 
-/// `?tab=map|now|saved` opens a tab directly (used by PWA shortcuts).
+/// `?tab=map|now|expo|saved` opens a tab directly (used by PWA shortcuts).
 int initialTabFor(Uri uri) => switch (uri.queryParameters['tab']) {
-  'map' => 1,
-  'now' => 2,
-  'saved' => 3,
-  _ => 0,
+  'map' => HomeTabs.map,
+  'now' => HomeTabs.now,
+  'expo' => HomeTabs.expo,
+  'saved' => HomeTabs.saved,
+  _ => HomeTabs.schedule,
 };
 
 class KubeConApp extends StatelessWidget {
@@ -75,6 +80,7 @@ class KubeConApp extends StatelessWidget {
     this.home,
     this.initialTab = 0,
     this.pendingAgenda,
+    this.links,
   });
   final AppState state;
   final Widget? home;
@@ -82,6 +88,9 @@ class KubeConApp extends StatelessWidget {
 
   /// Agenda payload from the launch URL, offered for import once up.
   final String? pendingAgenda;
+
+  /// Links opening the native app; agenda links among them offer an import.
+  final Stream<Uri>? links;
 
   @override
   Widget build(BuildContext context) => AppScope(
@@ -101,8 +110,17 @@ class KubeConApp extends StatelessWidget {
         themeMode: state.themeMode,
         home:
             home ??
-            HomeShell(initialTab: initialTab, pendingAgenda: pendingAgenda),
+            _withLinks(
+              HomeShell(initialTab: initialTab, pendingAgenda: pendingAgenda),
+            ),
       ),
     ),
   );
+
+  Widget _withLinks(Widget child) {
+    final links = this.links;
+    return links == null
+        ? child
+        : AgendaLinkListener(links: links, child: child);
+  }
 }

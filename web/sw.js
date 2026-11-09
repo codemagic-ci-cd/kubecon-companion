@@ -5,9 +5,10 @@
  * - App code and data (.js, .mjs, .wasm, .json): network first with a 4 s
  *   timeout, cached copy when offline or slow, so fixes reach people at once.
  * - Images and fonts: stale-while-revalidate.
- * - details.json (descriptions, bios) is deliberately not in SHELL: on a
- *   first visit over slow wifi it would compete with schedule.json. The app
- *   fetches it after its first frame and the .json handler below caches it.
+ * - details.json (descriptions, bios) and sponsors.json (booth directory)
+ *   are deliberately not in SHELL: on a first visit over slow wifi they would
+ *   compete with schedule.json. The app fetches them after its first frame
+ *   and the .json handler below caches them.
  * Bump CACHE_VERSION to drop old caches.
  */
 const CACHE_VERSION = 'v4';

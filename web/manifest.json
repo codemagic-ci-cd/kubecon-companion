@@ -19,6 +19,7 @@
   ],
   "shortcuts": [
     { "name": "Happening now", "url": "./?tab=now", "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }] },
-    { "name": "Venue map", "url": "./?tab=map", "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }] }
+    { "name": "Venue map", "url": "./?tab=map", "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }] },
+    { "name": "Sponsors and booths", "url": "./?tab=expo", "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }] }
   ]
 }

@@ -45,15 +45,36 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   /// False while another route covers the Map tab (tickers are muted then).
   bool _onScreen = true;
 
+  AppState? _app;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
   }
 
+  /// Handles [AppState.showOnMap]: selects the room once this tab is up.
+  void _onMapFocus() {
+    final req = _app?.mapFocus.value;
+    if (req == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final app = _app;
+      if (!mounted || app == null || app.mapFocus.value != req) return;
+      app.mapFocus.value = null;
+      final room = app.data.venue.room(req.roomId);
+      if (room != null) _selectRoom(room, moveCamera: true);
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final app = AppScope.read(context);
+    if (!identical(app, _app)) {
+      _app?.mapFocus.removeListener(_onMapFocus);
+      _app = app..mapFocus.addListener(_onMapFocus);
+      _onMapFocus();
+    }
     final on = TickerMode.valuesOf(context).enabled;
     if (on != _onScreen) {
       _onScreen = on;
@@ -76,6 +97,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _app?.mapFocus.removeListener(_onMapFocus);
     _live?.dispose();
     super.dispose();
   }

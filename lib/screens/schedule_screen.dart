@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/models.dart';
+import '../data/sponsors.dart';
 import '../data/venue_time.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
@@ -11,6 +12,8 @@ import '../widgets/common.dart';
 import '../widgets/now_banner.dart';
 import '../widgets/session_results.dart';
 import '../widgets/speaker_card.dart';
+import '../widgets/sponsor_tile.dart';
+import 'expo_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -189,7 +192,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         onChanged: (v) => setState(() => _query = v.trim()),
                         textInputAction: TextInputAction.search,
                         decoration: InputDecoration(
-                          hintText: 'Search talks, speakers, rooms',
+                          hintText: 'Search talks, speakers, companies',
                           prefixIcon: const Icon(Icons.search),
                           isDense: true,
                           suffixIcon: _query.isEmpty
@@ -243,6 +246,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           ? SessionResults(
               sessions: results,
               now: app.now,
+              leading: _query.length < 2
+                  ? null
+                  : SponsorMatches.forQuery(app.sponsors, _query),
               summary:
                   '${results.length} ${results.length == 1 ? 'result' : 'results'} across all days',
             )
@@ -263,6 +269,63 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ),
               ],
             ),
+    );
+  }
+}
+
+/// "Sponsors & booths" above session search results: the best 3 sponsor
+/// matches and "See all N" into the Expo directory.
+class SponsorMatches extends StatelessWidget {
+  const SponsorMatches({super.key, required this.query, required this.matches});
+
+  /// Null unless [query] names a sponsor or booth: topic words alone
+  /// ("security") match many sponsor descriptions and would crowd out talks.
+  static SponsorMatches? forQuery(List<Sponsor> sponsors, String query) {
+    if (!hasStrongSponsorMatch(sponsors, query)) return null;
+    return SponsorMatches(query: query, matches: rankSponsors(sponsors, query));
+  }
+
+  final String query;
+  final List<Sponsor> matches;
+
+  static const maxShown = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.storefront_outlined,
+                size: 18,
+                color: context.brand.icon,
+              ),
+              const SizedBox(width: 8),
+              Text('Sponsors & booths', style: text.titleMedium),
+            ],
+          ),
+        ),
+        for (final s in matches.take(maxShown))
+          SponsorTile(sponsor: s, showTier: true),
+        if (matches.length > maxShown)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: SubtleButton(
+              icon: Icons.storefront_outlined,
+              label: 'See all ${matches.length}',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ExpoScreen(initialQuery: query),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kubecon_companion/data/agenda_link.dart';
 import 'package:kubecon_companion/data/models.dart';
 import 'package:kubecon_companion/main.dart';
+import 'package:kubecon_companion/screens/home_shell.dart';
 import 'package:kubecon_companion/screens/saved_screen.dart';
 import 'package:kubecon_companion/services/notification_service.dart';
 import 'package:kubecon_companion/state/app_state.dart';
@@ -243,7 +244,7 @@ void main() {
       await tester.pumpWidget(
         KubeConApp(
           state: app,
-          initialTab: 3,
+          initialTab: HomeTabs.saved,
           pendingAgenda: encodeAgenda(['t1', 'w1', 'k1', 'gone']),
         ),
       );

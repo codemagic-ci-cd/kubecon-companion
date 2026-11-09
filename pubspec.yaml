@@ -44,6 +44,7 @@ dependencies:
   geolocator: ^14.0.1
   share_plus: ^13.3.1
   qr_flutter: ^4.1.0
+  app_links: ^7.2.2
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +73,7 @@ flutter:
     - assets/data/rooms_raw.json
     - assets/data/official_map.json
     - assets/data/outdoor.json
+    - assets/data/sponsors.json
     - assets/maps/kcna26_venue_map.jpg
     - assets/brand/
 

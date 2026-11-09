@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.codemagic.kubecon_companion",
+      "sha256_cert_fingerprints": [
+        "C0:23:7F:28:D0:54:71:B5:95:AE:AF:E8:F8:35:5B:C8:3D:04:83:DF:FD:F4:E6:D3:3F:28:9C:EA:21:D1:18:F3"
+      ]
+    }
+  }
+]

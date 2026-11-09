@@ -157,6 +157,7 @@ class SessionResults extends StatefulWidget {
     required this.sessions,
     required this.now,
     this.summary,
+    this.leading,
     this.emptyTitle = 'No matching sessions',
     this.emptyMessage = 'Try a different search or clear the filters.',
   });
@@ -166,6 +167,10 @@ class SessionResults extends StatefulWidget {
 
   /// Small line above the list, e.g. "12 results across all days".
   final String? summary;
+
+  /// Shown above the summary and results, also when nothing matched (e.g.
+  /// matching sponsors in schedule search).
+  final Widget? leading;
   final String emptyTitle;
   final String emptyMessage;
 
@@ -182,6 +187,7 @@ class _SessionResultsState extends State<SessionResults> {
     if (w.sessions.isEmpty) {
       return ListView(
         children: [
+          ?w.leading,
           EmptyState(
             icon: Icons.search_off,
             title: w.emptyTitle,
@@ -205,14 +211,21 @@ class _SessionResultsState extends State<SessionResults> {
         timeLabel: label,
         endedLabel: 'Already ended',
       ),
-      header: w.summary == null
+      header: w.summary == null && w.leading == null
           ? null
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Text(
-                w.summary!,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ?w.leading,
+                if (w.summary != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Text(
+                      w.summary!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+              ],
             ),
       expandedEnded: _showEnded,
       onToggleEnded: () => setState(() => _showEnded = !_showEnded),

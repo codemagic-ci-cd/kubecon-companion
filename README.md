@@ -54,3 +54,12 @@ The venue map image is the official one (KubeCon + CloudNativeCon / Linux Founda
 | `ios-release` | Signs the app, builds the IPA and uploads it to TestFlight through the `codemagic` App Store Connect integration. |
 
 To set it up, connect the repo in Codemagic, add the integrations and env groups you need, and push. One codebase gives you three stores' worth of builds without anyone running a build on their own machine.
+
+## Shared agenda links open the app
+
+Agenda links (`https://kubecon.codemagic.app/?agenda=a1.…`) open the installed app, which offers the import. The site serves the verification files from `web/.well-known/`:
+
+- `assetlinks.json` (Android App Links) lists the SHA-256 fingerprint of the upload key in `~/.kubecon-companion-signing/upload.jks`. **When the Play listing exists, add the Play App Signing key fingerprint too** (Play Console > Test and release > App integrity), or links from Play installs stay in the browser.
+- `apple-app-site-association` (iOS Universal Links) names `X8NNQ9CYL2.io.codemagic.kubeconCompanion` and matches only URLs with an `agenda` query. The App ID needs the Associated Domains capability, and the App Store profile must be created after it was enabled.
+
+Both must be served with HTTP 200 and a JSON content type at `https://kubecon.codemagic.app/.well-known/…`.
