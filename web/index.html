@@ -5,6 +5,10 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <script>
+    // Static Pages has no folder index pages, so /get and /get/ land here: forward them.
+    if (/^\/get\/?$/.test(location.pathname)) location.replace('/get/index.html' + location.search);
+  </script>
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Schedule, indoor venue map with directions and reminders for KubeCon + CloudNativeCon North America 2026. Built and shipped with Codemagic.">

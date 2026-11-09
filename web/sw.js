@@ -72,7 +72,7 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     // Only the app shell (/ or /index.html) is cached as index.html; other pages
     // such as /get/ are cached under their own URL.
-    const isShell = /\/(index\.html)?$/.test(url.pathname) && !/\/get\/?$/.test(url.pathname);
+    const isShell = /\/(index\.html)?$/.test(url.pathname) && !/\/get\//.test(url.pathname);
     event.respondWith(
       fetch(req).then((res) => {
         if (res.ok) {
