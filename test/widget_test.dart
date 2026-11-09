@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kubecon_companion/widgets/session_tile.dart';
 import 'package:kubecon_companion/data/models.dart';
 import 'package:kubecon_companion/main.dart';
 import 'package:kubecon_companion/outdoor/outdoor_map.dart';
@@ -96,7 +97,13 @@ void main() {
     await tester.pump();
     expect(state.saved, hasLength(1));
 
-    await tester.tap(find.text('Scaling CI on Kubernetes'));
+    // After saving, the session also shows in the "Up next" banner; tap the list tile.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SessionTile),
+        matching: find.text('Scaling CI on Kubernetes'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Before you go'), findsOneWidget);
     expect(find.text('Laptop with kind installed'), findsOneWidget);

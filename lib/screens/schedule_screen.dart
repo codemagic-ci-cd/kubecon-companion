@@ -5,6 +5,7 @@ import '../data/venue_time.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
+import '../widgets/share_app_sheet.dart';
 import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
 import '../widgets/now_banner.dart';
@@ -168,9 +169,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     return Scaffold(
       appBar: AppBar(
         title: const AppBarTitle(),
-        actions: const [SettingsAction()],
+        actions: const [ShareAppAction(), SettingsAction()],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(112),
+          preferredSize: Size.fromHeight(_query.isEmpty ? 112 : 64),
           child: Column(
             children: [
               Padding(
@@ -221,97 +222,302 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   ],
                 ),
               ),
-              TabBar(
-                controller: _tabs,
-                tabs: [
-                  for (final d in conferenceDays)
-                    Tab(text: sameDay(d, today) ? 'Today' : fmtDayShort(d)),
-                ],
-              ),
+              if (_query.isEmpty)
+                TabBar(
+                  controller: _tabs,
+                  tabs: [
+                    for (final d in conferenceDays)
+                      Tab(text: sameDay(d, today) ? 'Today' : fmtDayShort(d)),
+                  ],
+                ),
             ],
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabs,
-        children: [
-          for (final d in conferenceDays)
-            _DayList(
-              key: PageStorageKey('day-${d.day}'),
-              day: d,
-              isToday: sameDay(d, today),
-              sessions: app
-                  .sessionsOn(d)
+      body: _query.isNotEmpty
+          ? _SearchResults(
+              sessions: app.data.sessions
                   .where((s) => _matches(app, s))
                   .toList(),
-              filtered: _query.isNotEmpty || filterCount > 0,
+              now: app.now,
+            )
+          : TabBarView(
+              controller: _tabs,
+              children: [
+                for (final d in conferenceDays)
+                  _DayList(
+                    key: PageStorageKey('day-${d.day}'),
+                    day: d,
+                    isToday: sameDay(d, today),
+                    now: app.now,
+                    sessions: app
+                        .sessionsOn(d)
+                        .where((s) => _matches(app, s))
+                        .toList(),
+                    filtered: filterCount > 0,
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 }
 
-class _DayList extends StatelessWidget {
+/// Rows for a lazy list: section titles, time headers and sessions.
+sealed class _Row {}
+
+class _SectionRow extends _Row {
+  _SectionRow(this.title, {this.icon});
+  final String title;
+  final IconData? icon;
+}
+
+class _TimeRow extends _Row {
+  _TimeRow(this.label);
+  final String label;
+}
+
+class _SessionRow extends _Row {
+  _SessionRow(this.session);
+  final Session session;
+}
+
+class _EndedToggleRow extends _Row {
+  _EndedToggleRow(this.count, this.label);
+  final int count;
+  final String label;
+}
+
+/// Adds sessions with a time header whenever the label changes.
+void _addTimed(
+  List<_Row> rows,
+  Iterable<Session> sessions,
+  String Function(Session) label,
+) {
+  String? last;
+  for (final s in sessions) {
+    final l = label(s);
+    if (l != last) {
+      rows.add(_TimeRow(l));
+      last = l;
+    }
+    rows.add(_SessionRow(s));
+  }
+}
+
+int _byStart(Session a, Session b) {
+  final c = a.start.compareTo(b.start);
+  return c != 0 ? c : a.title.compareTo(b.title);
+}
+
+/// Upcoming first, then what's on now, then (collapsed) what has ended.
+List<_Row> _upcomingFirst({
+  required List<Session> sessions,
+  required DateTime now,
+  required bool expandedEnded,
+  required String Function(Session) timeLabel,
+  required String endedLabel,
+}) {
+  final upcoming = sessions.where((s) => !s.start.isBefore(now)).toList()
+    ..sort(_byStart);
+  final live =
+      sessions
+          .where((s) => s.start.isBefore(now) && s.end.isAfter(now))
+          .toList()
+        ..sort((a, b) => a.end.compareTo(b.end));
+  final ended = sessions.where((s) => !s.end.isAfter(now)).toList()
+    ..sort(_byStart);
+
+  final rows = <_Row>[];
+  if (upcoming.isNotEmpty) {
+    rows.add(_SectionRow('Coming up', icon: Icons.upcoming_outlined));
+    _addTimed(rows, upcoming, timeLabel);
+  }
+  if (live.isNotEmpty) {
+    rows.add(_SectionRow('Happening now', icon: Icons.sensors));
+    for (final s in live) {
+      rows.add(_SessionRow(s));
+    }
+  }
+  if (ended.isNotEmpty) {
+    rows.add(_EndedToggleRow(ended.length, endedLabel));
+    if (expandedEnded) _addTimed(rows, ended, timeLabel);
+  }
+  return rows;
+}
+
+class _RowsList extends StatelessWidget {
+  const _RowsList({
+    required this.rows,
+    this.header,
+    this.expandedEnded = false,
+    this.onToggleEnded,
+  });
+
+  final List<_Row> rows;
+  final Widget? header;
+  final bool expandedEnded;
+  final VoidCallback? onToggleEnded;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final h = header == null ? 0 : 1;
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 24),
+      itemCount: rows.length + h,
+      itemBuilder: (context, i) {
+        if (h == 1 && i == 0) return header!;
+        final row = rows[i - h];
+        return switch (row) {
+          _SectionRow r => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            child: Row(
+              children: [
+                if (r.icon != null) ...[
+                  Icon(r.icon, size: 18, color: context.brand.icon),
+                  const SizedBox(width: 8),
+                ],
+                Text(r.title, style: text.titleMedium),
+              ],
+            ),
+          ),
+          _TimeRow r => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(r.label, style: text.titleSmall),
+          ),
+          _SessionRow r => SessionTile(session: r.session),
+          _EndedToggleRow r => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: SubtleButton(
+              icon: expandedEnded ? Icons.expand_less : Icons.expand_more,
+              label: expandedEnded
+                  ? 'Hide ${r.count} ended'
+                  : '${r.label} · ${r.count} ended',
+              onPressed: onToggleEnded,
+            ),
+          ),
+        };
+      },
+    );
+  }
+}
+
+class _DayList extends StatefulWidget {
   const _DayList({
     super.key,
     required this.day,
     required this.isToday,
+    required this.now,
     required this.sessions,
     required this.filtered,
   });
 
   final DateTime day;
   final bool isToday;
+  final DateTime now;
   final List<Session> sessions;
   final bool filtered;
 
   @override
-  Widget build(BuildContext context) {
-    // Flatten into time headers + sessions for a single lazy list.
-    final rows = <Object>[];
-    DateTime? last;
-    for (final s in sessions) {
-      if (last == null || !s.start.isAtSameMomentAs(last)) {
-        rows.add(s.start);
-        last = s.start;
-      }
-      rows.add(s);
-    }
-    final header = isToday && !filtered ? 1 : 0;
+  State<_DayList> createState() => _DayListState();
+}
 
-    if (sessions.isEmpty) {
+class _DayListState extends State<_DayList> {
+  bool _showEnded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = widget;
+    final banner = w.isToday && !w.filtered ? const NowBanner() : null;
+
+    if (w.sessions.isEmpty) {
       return ListView(
         children: [
-          if (header == 1) const NowBanner(),
+          ?banner,
           EmptyState(
             icon: Icons.search_off,
-            title: filtered ? 'No matching sessions' : 'Nothing scheduled',
-            message: filtered
+            title: w.filtered ? 'No matching sessions' : 'Nothing scheduled',
+            message: w.filtered
                 ? 'Try a different search or clear the filters.'
-                : 'No sessions are listed for ${fmtDayLong(day, isDay: true)}.',
+                : 'No sessions are listed for ${fmtDayLong(w.day, isDay: true)}.',
           ),
         ],
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 24),
-      itemCount: rows.length + header,
-      itemBuilder: (context, i) {
-        if (header == 1 && i == 0) return const NowBanner();
-        final row = rows[i - header];
-        if (row is DateTime) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              fmtTime(row),
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          );
-        }
-        return SessionTile(session: row as Session);
-      },
+    final List<_Row> rows;
+    if (w.isToday) {
+      rows = _upcomingFirst(
+        sessions: w.sessions,
+        now: w.now,
+        expandedEnded: _showEnded,
+        timeLabel: (s) => fmtTime(s.start),
+        endedLabel: 'Earlier today',
+      );
+    } else {
+      rows = <_Row>[];
+      _addTimed(rows, [...w.sessions]..sort(_byStart), (s) => fmtTime(s.start));
+    }
+    return _RowsList(
+      rows: rows,
+      header: banner,
+      expandedEnded: _showEnded,
+      onToggleEnded: () => setState(() => _showEnded = !_showEnded),
+    );
+  }
+}
+
+/// Search results across all conference days, upcoming first.
+class _SearchResults extends StatefulWidget {
+  const _SearchResults({required this.sessions, required this.now});
+
+  final List<Session> sessions;
+  final DateTime now;
+
+  @override
+  State<_SearchResults> createState() => _SearchResultsState();
+}
+
+class _SearchResultsState extends State<_SearchResults> {
+  bool _showEnded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.sessions.isEmpty) {
+      return ListView(
+        children: const [
+          EmptyState(
+            icon: Icons.search_off,
+            title: 'No matching sessions',
+            message: 'Try a different search or clear the filters.',
+          ),
+        ],
+      );
+    }
+    final today = venueDay(widget.now);
+    String label(Session s) {
+      final d = venueDay(s.start);
+      final day = sameDay(d, today) ? 'Today' : fmtDayShort(d);
+      return '$day · ${fmtTime(s.start)}';
+    }
+
+    return _RowsList(
+      rows: _upcomingFirst(
+        sessions: widget.sessions,
+        now: widget.now,
+        expandedEnded: _showEnded,
+        timeLabel: label,
+        endedLabel: 'Already ended',
+      ),
+      header: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: Text(
+          '${widget.sessions.length} results across all days',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ),
+      expandedEnded: _showEnded,
+      onToggleEnded: () => setState(() => _showEnded = !_showEnded),
     );
   }
 }
