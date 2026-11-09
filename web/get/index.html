@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Get KubeCon Companion</title>
+<meta name="description" content="Install KubeCon Companion on Android, iPhone or use it in the browser. Built and shipped with Codemagic.">
+<meta name="theme-color" content="#01091A">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Get KubeCon Companion">
+<meta property="og:description" content="Schedule, venue map with turn-by-turn directions, and reminders for KubeCon + CloudNativeCon NA 2026. Built and shipped with Codemagic.">
+<meta property="og:url" content="https://kubecon.codemagic.app/get/">
+<meta property="og:image" content="https://kubecon.codemagic.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/icons/Icon-192.png">
+<style>
+@font-face{font-family:Metropolis;src:url(/assets/assets/fonts/Metropolis-Regular.otf) format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:Metropolis;src:url(/assets/assets/fonts/Metropolis-SemiBold.otf) format("opentype");font-weight:600;font-display:swap}
+@font-face{font-family:Metropolis;src:url(/assets/assets/fonts/Metropolis-Bold.otf) format("opentype");font-weight:700;font-display:swap}
+:root{--page:#01091A;--card:linear-gradient(160deg,#182238,#101A2C);--heading:#FFFFFF;--body:#D2DBEE;--cta:#0957FF;--cta-hover:#0031EA;--subtle:#232A38;--subtle-hover:#2E3646;--accent:#FF9100}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--body);font-family:Metropolis,system-ui,-apple-system,sans-serif;letter-spacing:-.2px;line-height:1.5}
+body{min-height:100vh;overflow-x:hidden;position:relative}
+.glow{position:fixed;width:620px;height:420px;right:-260px;top:-220px;background:linear-gradient(90deg,#0031EA,#008BF7,#00CEFF,#FE19FF,#FF4D13);filter:blur(110px);opacity:.45;border-radius:50%;pointer-events:none}
+main{position:relative;max-width:520px;margin:0 auto;padding:32px 16px 48px}
+.logo{height:28px;display:block}
+h1{color:var(--heading);font-weight:700;font-size:30px;line-height:1.2;margin:28px 0 8px}
+.lede{font-size:16px;margin:0 0 24px}
+.card{background:var(--card);border-radius:20px;padding:24px;margin:0 0 16px}
+.card h2{color:var(--heading);font-weight:700;font-size:20px;line-height:1.26;margin:0 0 6px}
+.card p{margin:0 0 16px;font-size:15px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:12px;padding:0 24px;font-weight:600;font-size:16px;text-decoration:none;color:#fff;background:var(--cta);width:100%}
+.btn:hover{background:var(--cta-hover)}
+.btn.subtle{background:var(--subtle)}
+.btn.subtle:hover{background:var(--subtle-hover)}
+.btn svg{width:20px;height:20px;flex:none}
+ol{margin:14px 0 0;padding-left:20px;font-size:14px}
+ol li{margin:4px 0}
+.meta{font-size:13px;opacity:.8;margin-top:10px}
+.hidden{display:none}
+.tag{display:inline-block;background:var(--subtle);color:#fff;font-weight:600;font-size:12px;border-radius:999px;padding:3px 10px;margin-left:6px;vertical-align:2px}
+footer{margin-top:28px;font-size:14px}
+footer a{color:var(--heading);font-weight:600;text-decoration:none}
+footer a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<main>
+  <img class="logo" src="/assets/assets/brand/logo-white.svg" alt="Codemagic">
+  <h1>KubeCon Companion</h1>
+  <p class="lede">Schedule, venue map with turn-by-turn directions, and reminders for KubeCon + CloudNativeCon North America 2026.</p>
+
+  <section class="card" id="android">
+    <h2>Android</h2>
+    <p>Install the app directly. No Play Store needed.</p>
+    <a class="btn" id="apk" href="#" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      Download the Android app
+    </a>
+    <ol>
+      <li>Open the downloaded file.</li>
+      <li>If asked, allow installs from your browser, then tap Install.</li>
+      <li>If Play Protect asks about an unknown developer, tap More details, then Install anyway.</li>
+    </ol>
+    <div class="meta" id="apk-meta">About 57 MB · Android 7.0 or newer</div>
+  </section>
+
+  <section class="card" id="ios">
+    <h2>iPhone</h2>
+    <p>Add the web app to your Home Screen. It works offline and feels like an app.</p>
+    <a class="btn" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><rect x="4" y="11" width="16" height="10" rx="2"/></svg>
+      Open the web app
+    </a>
+    <ol>
+      <li>Open it in Safari.</li>
+      <li>Tap Share, then Add to Home Screen.</li>
+    </ol>
+    <div class="meta">Native iOS app is in TestFlight for the Codemagic team.</div>
+  </section>
+
+  <section class="card" id="web">
+    <h2>Any device</h2>
+    <p>Use it right in the browser. Nothing to install.</p>
+    <a class="btn subtle" href="/">Open kubecon.codemagic.app</a>
+  </section>
+
+  <footer>Built and shipped with <a href="https://codemagic.io/?utm_source=kubecon-companion&amp;utm_medium=get-page">Codemagic</a>: one Flutter codebase, three platforms.</footer>
+</main>
+<script>
+// Latest signed APK from the Codemagic build (public link valid until 2026-11-14).
+var APK_URL = "https://api.codemagic.io/artifacts/.eJwVwcGSgiAAANB_6c5MLrngoYOmyyRlGibmpZFaRVuFTDP9-mbfW5T2P-eBqyYUR02wtwOJMF92N0zUGjZCnclGU2Nu2tEQVVHfgkh6HXMukLmBvY3gmbYcKHvUPIHVAJEckUJK7nVSowoNFh9zm8IAQT8W59cFA89a6ms_bXOjz52eCdn8nS5Ga76RWcjTyosSDlPgTw2gNx8fw-ntc8UM1JLuaz4WryFHj7u5ZJmKGcNj2aQ0LCUoDonjxqvEteLfJX0cnumzJvsIEcqFIj-ayT1xlZ_O7_J6lVmfgV6e4qJLzQikAeG4b7NdWGOkCfDV9_YeZkw7xbheLz4TXmGC.TRwHUZPKr2t--ePsdgQkJBVQ038";
+document.getElementById('apk').href = APK_URL;
+(function () {
+  var ua = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var main = document.querySelector('main');
+  var android = document.getElementById('android');
+  var ios = document.getElementById('ios');
+  var web = document.getElementById('web');
+  // Put the visitor's platform first; keep the others below for sharing.
+  if (isAndroid) { main.insertBefore(android, ios); ios.classList.add('hidden'); }
+  else if (isIOS) { main.insertBefore(ios, android); android.classList.add('hidden'); }
+})();
+</script>
+</body>
+</html>

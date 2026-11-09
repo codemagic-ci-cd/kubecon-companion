@@ -7,7 +7,7 @@
  * - Images and fonts: stale-while-revalidate.
  * Bump CACHE_VERSION to drop old caches.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE = `kubecon-companion-${CACHE_VERSION}`;
 const SHELL = [
   './',
@@ -70,13 +70,19 @@ self.addEventListener('fetch', (event) => {
   if (sameOrigin && NEVER_CACHE.some((n) => url.pathname.endsWith(n))) return;
 
   if (req.mode === 'navigate') {
+    // Only the app shell (/ or /index.html) is cached as index.html; other pages
+    // such as /get/ are cached under their own URL.
+    const isShell = /\/(index\.html)?$/.test(url.pathname) && !/\/get\/?$/.test(url.pathname);
     event.respondWith(
       fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put('index.html', copy));
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(isShell ? 'index.html' : req, copy));
+        }
         return res;
-      }).catch(() => caches.match('index.html', { ignoreSearch: true })
-        .then((r) => r || caches.match('./')))
+      }).catch(() => (isShell
+        ? caches.match('index.html', { ignoreSearch: true }).then((r) => r || caches.match('./'))
+        : caches.match(req, { ignoreSearch: true })))
     );
     return;
   }

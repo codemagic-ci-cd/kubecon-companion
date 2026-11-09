@@ -50,3 +50,4 @@ app.*.map.json
 # Raw upstream schedule cache (re-fetch with tool/build_sessions.py)
 /tool/sched_raw/
 __pycache__/
+.claude/
