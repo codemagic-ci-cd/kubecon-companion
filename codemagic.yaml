@@ -79,8 +79,12 @@ workflows:
       - *test
       - name: Build APK and App Bundle
         script: |
+          set -euo pipefail
+          # Flutter 3.47 compiles against Android API 37, which the build image may not have yet.
+          yes | sdkmanager "platforms;android-37" > /dev/null || true
           flutter build apk --release --build-number=$BUILD_NUMBER
           flutter build appbundle --release --build-number=$BUILD_NUMBER
+          ls -la build/app/outputs/flutter-apk/app-release.apk
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/bundle/release/*.aab
