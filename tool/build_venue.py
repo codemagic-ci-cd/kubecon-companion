@@ -168,6 +168,16 @@ room("l1-north-grand-ballroom-foyer", "North Grand Ballroom Foyer", "L1", 392, 4
                  "The North Grand Ballroom Foyer opens on your right at the north end of the ballroom, "
                  "next to the West Temple Entrance"],
      ["Salt Palace | Level 1 | North Grand Ballroom Foyer", "North Foyer", "North Ballroom Foyer"])
+# CNCF-hosted co-located events (Sessionize ayajbd6b) serve AM/PM breaks in "Meeting Room Foyers": the foyer
+# outside each event's room (Grand Ballroom + 151 on Level 1, 250-255 on Level 2). No box of its own on the
+# official map; it points at the North Grand Ballroom Foyer via partOf.
+room("meeting-room-foyers", "Meeting Room Foyers (outside each co-located event room)", "L1", 392, 474, 50, 70,
+     GB_INTRO + ["Breaks are set up in the foyer right outside your co-located event's room",
+                 "Level 1 rooms (Grand Ballroom, Room 151): the Lower Concourse foyers along the Grand Ballroom "
+                 "and the North Grand Ballroom Foyer",
+                 "Level 2 rooms (250-255): the Upper Concourse foyer outside the rooms (North Foyer escalators up "
+                 "one floor)"],
+     ["Meeting Room Foyers"], partOf="l1-north-grand-ballroom-foyer")
 room("l1-150", "Room 150 A-G", "L1", 452, 474, 58, 40,
      GB_INTRO + ["Walk north past the Grand Ballroom and the North Grand Ballroom Foyer on your right",
                  "Room 150 is the next set of doors on your right; the First Aid station is beside it"],
@@ -300,6 +310,12 @@ room("l2-260b", "Room 260B (Women + Non-Binary Quiet Room)", "L2", 870, 262, 30,
 room("l2-upper-mezzanine", "Upper Mezzanine", "L2", 935, 262, 55, 100,
      UPPER_MEZZ + ["The Upper Mezzanine lounge area is beside Rooms 257-260"],
      ["Salt Palace | Level 2 | Upper Mezzanine", "Upper Mezzanine"])
+# Co-located Evening Reception (Sessionize ayajbd6b). Spans the Lower (L1, toward Hall 4) and Upper (L2)
+# Mezzanines; the official map shows it via the Upper Mezzanine box (partOf).
+room("lower-and-upper-mezzanine", "Lower + Upper Mezzanine", "L2", 935, 262, 55, 100,
+     UPPER_MEZZ + ["The reception spreads across the Upper Mezzanine (beside Rooms 257-260) and the Lower "
+                   "Mezzanine below it on Level 1"],
+     ["Salt Palace | Lower & Upper Mezzanine", "Lower & Upper Mezzanine"], partOf="l2-upper-mezzanine")
 
 # ---- Level 3 -------------------------------------------------------------------------------
 L3_BASE = [ENTER, BADGE, INTO_CONCOURSE, TO_NORTH_END, PAST_150, TO_155_WING,

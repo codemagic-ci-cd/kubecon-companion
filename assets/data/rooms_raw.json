@@ -1,5 +1,5 @@
 {
- "source": "https://sessionize.com/api/v2/svi82w6c/view/All",
+ "source": "https://sessionize.com/api/v2/svi82w6c/view/All + https://sessionize.com/api/v2/ayajbd6b/view/All",
  "rooms": [
   {
    "id": "offsite-ac-hotel-downtown",
@@ -209,37 +209,37 @@
    "id": "l1-151",
    "raw": "Salt Palace | Level 1 | 151",
    "kind": "onsite",
-   "sessionCount": 18
+   "sessionCount": 35
   },
   {
    "id": "l1-grand-ballroom-ace",
    "raw": "Salt Palace | Level 1 | Grand Ballroom ACE",
    "kind": "onsite",
-   "sessionCount": 18
+   "sessionCount": 36
   },
   {
    "id": "l1-grand-ballroom-bdf",
    "raw": "Salt Palace | Level 1 | Grand Ballroom BDF",
    "kind": "onsite",
-   "sessionCount": 18
+   "sessionCount": 37
   },
   {
    "id": "l1-grand-ballroom-gi",
    "raw": "Salt Palace | Level 1 | Grand Ballroom GI",
    "kind": "onsite",
-   "sessionCount": 17
+   "sessionCount": 27
   },
   {
    "id": "l1-grand-ballroom-h",
    "raw": "Salt Palace | Level 1 | Grand Ballroom H",
    "kind": "onsite",
-   "sessionCount": 19
+   "sessionCount": 39
   },
   {
    "id": "l1-grand-ballroom-j",
    "raw": "Salt Palace | Level 1 | Grand Ballroom J",
    "kind": "onsite",
-   "sessionCount": 15
+   "sessionCount": 33
   },
   {
    "id": "l1-hall-de",
@@ -252,6 +252,12 @@
    "raw": "Salt Palace | Level 1 | Halls A-C, Halls 1-5",
    "kind": "onsite",
    "sessionCount": 31
+  },
+  {
+   "id": "l1-lower-concourse-foyer-hall-4-via-lower-mezzanine",
+   "raw": "Salt Palace | Level 1 | Lower Concourse Foyer + Hall 4 (via Lower Mezzanine)",
+   "kind": "onsite",
+   "sessionCount": 4
   },
   {
    "id": "l1-north-grand-ballroom-foyer",
@@ -293,43 +299,43 @@
    "id": "l2-250-a-c",
    "raw": "Salt Palace | Level 2 | 250 A-C",
    "kind": "onsite",
-   "sessionCount": 19
+   "sessionCount": 37
   },
   {
    "id": "l2-250-d-f",
    "raw": "Salt Palace | Level 2 | 250 D-F",
    "kind": "onsite",
-   "sessionCount": 17
+   "sessionCount": 27
   },
   {
    "id": "l2-251-a-c",
    "raw": "Salt Palace | Level 2 | 251 A-C",
    "kind": "onsite",
-   "sessionCount": 17
+   "sessionCount": 29
   },
   {
    "id": "l2-251-d-f",
    "raw": "Salt Palace | Level 2 | 251 D-F",
    "kind": "onsite",
-   "sessionCount": 17
+   "sessionCount": 28
   },
   {
    "id": "l2-254",
    "raw": "Salt Palace | Level 2 | 254",
    "kind": "onsite",
-   "sessionCount": 18
+   "sessionCount": 36
   },
   {
    "id": "l2-255-a",
    "raw": "Salt Palace | Level 2 | 255 A",
    "kind": "onsite",
-   "sessionCount": 9
+   "sessionCount": 20
   },
   {
    "id": "l2-255-bc",
    "raw": "Salt Palace | Level 2 | 255 BC",
    "kind": "onsite",
-   "sessionCount": 18
+   "sessionCount": 34
   },
   {
    "id": "l2-255-d",
@@ -341,7 +347,7 @@
    "id": "l2-255-ef",
    "raw": "Salt Palace | Level 2 | 255 EF",
    "kind": "onsite",
-   "sessionCount": 17
+   "sessionCount": 33
   },
   {
    "id": "l2-east-registration",
@@ -354,6 +360,18 @@
    "raw": "Salt Palace | Level 2 | Upper Mezzanine",
    "kind": "onsite",
    "sessionCount": 1
+  },
+  {
+   "id": "lower-and-upper-mezzanine",
+   "raw": "Salt Palace | Lower & Upper Mezzanine",
+   "kind": "onsite",
+   "sessionCount": 1
+  },
+  {
+   "id": "meeting-room-foyers",
+   "raw": "Meeting Room Foyers",
+   "kind": "onsite",
+   "sessionCount": 6
   }
  ]
 }

@@ -10,8 +10,13 @@ backing events.linuxfoundation.org/.../program/schedule/) into two minified file
                              prerequisites, speaker bio/photo/linkedin/website, each
                              speaker once (deduped by Sessionize speaker id).
 
-Usage:  python3 -I tool/build_sessions.py [path/to/all.json]
-If no path is given it downloads https://sessionize.com/api/v2/svi82w6c/view/All.
+CNCF-hosted co-located talks (Nov 9) come from a second Sessionize event and are merged in
+with ids "co-<id>" (see add_colocated).
+
+Usage:  python3 -I tool/build_sessions.py [path/to/all.json [path/to/colocated.json]]
+If no path is given it downloads https://sessionize.com/api/v2/svi82w6c/view/All. The
+co-located feed is read from tool/sched_raw/colocated.json, else downloaded from
+https://sessionize.com/api/v2/ayajbd6b/view/All.
 """
 import datetime as dt
 import json
@@ -240,6 +245,178 @@ def base36(n):
             return out
 
 
+# CNCF-hosted co-located events: the main feed has only one all-day block per event
+# ("<Event> Hosted by CNCF - Full Day Event | ...", type colocated). The talks live in a
+# separate Sessionize event, found in the data-sched-config of
+# events.linuxfoundation.org/.../co-located-events/cncf-hosted-co-located-schedule/.
+CO_API = "https://sessionize.com/api/v2/ayajbd6b/view/All"
+CO_SCHED_URL = ("https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/"
+                "co-located-events/cncf-hosted-co-located-schedule/?id={}")
+CO_RAW = os.path.join(ROOT, "tool", "sched_raw", "colocated.json")
+CO_Q_COMPANY, CO_Q_TITLE = 129697, 129698
+CO_PREFIX = "co-"
+CO_GENERIC_TRACK = "CNCF-hosted Co-located Events"  # main feed's primary category for the blocks
+CO_BLOCK_RE = re.compile(r"^(.*?)\s+Hosted by CNCF\b")
+CO_NON_EVENT = {"☕ Breaks", "🎉 Experiences", "Registration"}
+
+
+def load_colocated(path):
+    """Co-located feed: explicit path, else the cached raw file, else download."""
+    path = path or CO_RAW
+    if os.path.exists(path):
+        return json.load(open(path, encoding="utf-8"))
+    try:
+        with urllib.request.urlopen(CO_API, timeout=60) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except OSError as e:
+        print(f"warning: co-located feed unavailable ({e}); skipping", file=sys.stderr)
+        return None
+
+
+def _speaker_key(name, company):
+    return (re.sub(r"\s+", " ", (name or "")).strip().lower(), (company or "").strip().lower())
+
+
+def _same_org(a, b):
+    """Loose company match for speakers whose name is unique in the main feed."""
+    a, b = [re.sub(r"[^a-z0-9 ]", "", (x or "").lower()).split() for x in (a, b)]
+    if not a or not b:
+        return True
+    if a[0] == b[0]:
+        return True  # "8gears" vs "8gears Container Registry"
+    initials = lambda w: "".join(x[0] for x in w)
+    return (len(a) == 1 and a[0] == initials(b)) or (len(b) == 1 and b[0] == initials(a))
+
+
+def add_colocated(data, out, session_details, speakers, speaker_details, used_speakers, room_map):
+    """Merge the CNCF-hosted co-located talks into the main-feed structures (in place).
+
+    Talks get ids "co-<sessionize id>" and track = event name; the main feed's all-day
+    block for each event gets the same track plus "children": <talk count>, so a
+    track filter shows the block and its talks together. Registration entries are
+    skipped (the main feed has the same ones). Breaks shared by several events keep
+    the generic co-located track and list their events in the description.
+    """
+    cats = {i["id"]: i["name"] for c in data["categories"] for i in c["items"]}
+    primary_ids = [i["id"] for c in data["categories"] if c["title"] == "All Sessions" for i in c["items"]]
+    level_items = {i["id"]: i["name"] for c in data["categories"] if c["title"] == "Audience Level" for i in c["items"]}
+    rooms = {r["id"]: r["name"].strip() for r in data["rooms"]}
+
+    # Speakers: reuse the main-feed entry when the Sessionize id or name+company matches.
+    by_key = {_speaker_key(v["name"], v.get("company")): k for k, v in speakers.items()}
+    by_name = {}
+    for k, v in speakers.items():
+        by_name.setdefault(_speaker_key(v["name"], None)[0], []).append(k)
+    sp_map = {}
+    for sp in data["speakers"]:
+        qa = {q["questionId"]: (q["answerValue"] or "").strip() for q in sp.get("questionAnswers", [])}
+        company, title = qa.get(CO_Q_COMPANY) or None, qa.get(CO_Q_TITLE) or None
+        if not company and not title and sp.get("tagLine"):
+            tl = sp["tagLine"]
+            company, title = [x.strip() for x in tl.split(", ", 1)] if ", " in tl else (None, tl)
+        name = sp.get("fullName") or f'{sp.get("firstName","")} {sp.get("lastName","")}'.strip()
+        company, title = _clean(company), _clean(title)
+        same = sp["id"] if sp["id"] in speakers else by_key.get(_speaker_key(name, company))
+        cand = by_name.get(_speaker_key(name, None)[0], [])
+        if not same and len(cand) == 1 and _same_org(company, speakers[cand[0]].get("company")):
+            same = cand[0]  # e.g. "AWS" vs "Amazon Web Services", or one side without a company
+        links = speaker_links(sp)
+        if same:
+            sp_map[sp["id"]] = same
+            base, det = speakers[same], speaker_details[same]
+            base["title"] = base.get("title") or title
+            base["company"] = base.get("company") or company
+            for k, v in links.items():
+                tgt = base["links"] if k in SEARCH_LINKS else det["links"]
+                tgt.setdefault(k, v)
+            det["bio"] = det.get("bio") or (sp.get("bio") or "").replace("\r\n", "\n").strip() or None
+            det["photo"] = det.get("photo") or sp.get("profilePicture") or None
+            continue
+        sp_map[sp["id"]] = sp["id"]
+        speakers[sp["id"]] = {"name": name, "title": title, "company": company,
+                              "links": {k: v for k, v in links.items() if k in SEARCH_LINKS}}
+        speaker_details[sp["id"]] = {
+            "bio": (sp.get("bio") or "").replace("\r\n", "\n").strip() or None,
+            "photo": sp.get("profilePicture") or None,
+            "links": {k: v for k, v in links.items() if k not in SEARCH_LINKS},
+        }
+        by_key[_speaker_key(name, company)] = sp["id"]
+
+    children = {}
+    for s in data["sessions"]:
+        if s.get("status") not in (None, "Accepted"):
+            continue
+        sess_cats = [cats[x] for x in s["categoryItems"] if x in cats]
+        primaries = [cats[x] for x in primary_ids if x in s["categoryItems"]]
+        if "Registration" in primaries:
+            continue  # same Registration / Coat Check entries as the main feed
+        events = [p for p in primaries if p not in CO_NON_EVENT]
+        title = re.sub(r"\s+", " ", s["title"]).strip()
+        desc = clean_desc(s.get("description"))
+        if "☕ Breaks" in primaries:
+            stype = "meal" if re.search(r"lunch|breakfast|dinner", title, re.I) else "break"
+        elif "🎉 Experiences" in primaries:
+            stype = "social"
+        elif "Keynote Session" in sess_cats:
+            stype = "keynote"
+        elif "Panel Discussion" in sess_cats or re.search(r"\bpanel\b", title, re.I):
+            stype = "panel"
+        elif "⚡ Lightning Talk" in sess_cats:
+            stype = "lightning"
+        elif re.search(r"workshop|hands-on", title, re.I):
+            stype = "workshop"
+        else:
+            stype = "talk"
+        track = events[0] if len(events) == 1 else CO_GENERIC_TRACK
+        if len(events) > 1:
+            desc = (f"For: {', '.join(events)}\n\n{desc}").strip()
+        raw_room = rooms.get(s["roomId"], "Room TBD")
+        rid = room_id(raw_room)
+        entry = room_map.setdefault(rid, dict(id=rid, raw=raw_room, kind="onsite", sessionCount=0))
+        entry["sessionCount"] += 1
+        spk = [sp_map[x] for x in s["speakers"] if x in sp_map]
+        used_speakers.update(spk)
+        lvl = next((level_items[x] for x in s["categoryItems"] if x in level_items), None)
+        level = {"Beginner": "beginner", "Advanced": "advanced", "Any Level": "any",
+                 "Intermediate": "intermediate"}.get(lvl)
+        prereq = prerequisites(desc, sess_cats)
+        sid = f"{CO_PREFIX}{s['id']}"
+        out.append(compact({
+            "id": sid,
+            "title": title,
+            "start": iso(s["startsAt"]),
+            "end": iso(s["endsAt"]),
+            "type": stype,
+            "track": track,
+            "roomId": rid,
+            "level": level,
+            "speakers": spk,
+            "url": CO_SCHED_URL.format(s["id"]),
+            # Not highlighted: co-located breaks/reception are for All-Access pass
+            # holders only and would crowd everyone's Now tab and reminders.
+            "hasPrerequisites": bool(prereq),
+        }))
+        if desc or prereq:
+            session_details[sid] = compact({"description": desc, "prerequisites": prereq})
+        if len(events) == 1:
+            children[events[0]] = children.get(events[0], 0) + 1
+
+    # Point the main feed's all-day blocks at their event track.
+    for sess in out:
+        if sess.get("type") != "colocated" or sess.get("track") != CO_GENERIC_TRACK:
+            continue
+        m = CO_BLOCK_RE.match(sess["title"])
+        if m and m.group(1) in children:
+            sess["track"] = m.group(1)
+            sess["children"] = children[m.group(1)]
+        elif m:
+            print(f"warning: no co-located talks for block {sess['title']!r}", file=sys.stderr)
+    blocks = {sess["track"] for sess in out if sess.get("children")}
+    for ev in sorted(set(children) - blocks):
+        print(f"warning: co-located event {ev!r} has talks but no main-feed block", file=sys.stderr)
+    print("co-located talks per event: " + ", ".join(f"{k} {v}" for k, v in sorted(children.items())))
+
+
 def write_min(name, doc):
     with open(os.path.join(OUT_DIR, name), "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, separators=(",", ":"))
@@ -336,6 +513,12 @@ def main():
         }))
         if desc or prereq:
             session_details[sid] = compact({"description": desc, "prerequisites": prereq})
+
+    # ---- CNCF-hosted co-located events (separate Sessionize event) -------------------
+    co = load_colocated(sys.argv[2] if len(sys.argv) > 2 else None)
+    if co is not None:
+        add_colocated(co, out, session_details, speakers, speaker_details, used_speakers, room_map)
+        src_note = f"{API} + {CO_API}"
 
     out.sort(key=lambda x: (x["start"], x["end"], x["title"]))
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=-7))).replace(microsecond=0).isoformat()

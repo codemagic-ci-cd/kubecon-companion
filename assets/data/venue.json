@@ -544,6 +544,27 @@
    ]
   },
   {
+   "id": "meeting-room-foyers",
+   "name": "Meeting Room Foyers (outside each co-located event room)",
+   "aliases": [
+    "Meeting Room Foyers"
+   ],
+   "levelId": "L1",
+   "x": 392,
+   "y": 474,
+   "w": 50,
+   "h": 70,
+   "directions": [
+    "Enter the Salt Palace through the 200 South (Main) Entrance on 200 South, between West Temple and 200 West",
+    "Registration + Badge Pick-Up is right inside the doors in the South Lobby; pick up your badge first if you don't have it",
+    "Walk north out of the South Lobby past the South Foyer into the Lower Concourse, the long main corridor (exhibit halls on your left, Grand Ballroom on your right)",
+    "Breaks are set up in the foyer right outside your co-located event's room",
+    "Level 1 rooms (Grand Ballroom, Room 151): the Lower Concourse foyers along the Grand Ballroom and the North Grand Ballroom Foyer",
+    "Level 2 rooms (250-255): the Upper Concourse foyer outside the rooms (North Foyer escalators up one floor)"
+   ],
+   "partOf": "l1-north-grand-ballroom-foyer"
+  },
+  {
    "id": "l1-150",
    "name": "Room 150 A-G",
    "aliases": [
@@ -1256,6 +1277,32 @@
     "Pass Room 254 and follow signs up to the Upper Mezzanine",
     "The Upper Mezzanine lounge area is beside Rooms 257-260"
    ]
+  },
+  {
+   "id": "lower-and-upper-mezzanine",
+   "name": "Lower + Upper Mezzanine",
+   "aliases": [
+    "Salt Palace | Lower & Upper Mezzanine",
+    "Lower & Upper Mezzanine"
+   ],
+   "levelId": "L2",
+   "x": 935,
+   "y": 262,
+   "w": 55,
+   "h": 100,
+   "directions": [
+    "Enter the Salt Palace through the 200 South (Main) Entrance on 200 South, between West Temple and 200 West",
+    "Registration + Badge Pick-Up is right inside the doors in the South Lobby; pick up your badge first if you don't have it",
+    "Walk north out of the South Lobby past the South Foyer into the Lower Concourse, the long main corridor (exhibit halls on your left, Grand Ballroom on your right)",
+    "Keep walking north along the Lower Concourse past Hall DE and the Solutions Showcase Main Entrance on your left and the Grand Ballroom on your right",
+    "Continue past the North Grand Ballroom Foyer and Rooms 150 and 151 on your right",
+    "At the north end of the Lower Concourse, take the North Foyer escalators (elevator alongside) up one floor to Level 2",
+    "At the top you arrive in the Level 2 North Foyer at the start of the Upper Concourse",
+    "Walk to the north end of the Upper Concourse and turn left (west)",
+    "Pass Room 254 and follow signs up to the Upper Mezzanine",
+    "The reception spreads across the Upper Mezzanine (beside Rooms 257-260) and the Lower Mezzanine below it on Level 1"
+   ],
+   "partOf": "l2-upper-mezzanine"
   },
   {
    "id": "l3-355-a",
