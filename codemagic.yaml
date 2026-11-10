@@ -97,8 +97,8 @@ workflows:
     publishing:
       google_play:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        # Internal testing: up to 100 testers, available within minutes, no review.
-        track: internal
+        # Open testing ("beta" in the Play API): anyone can join from the Play listing.
+        track: beta
 
   ios-simulator:
     name: iOS simulator build (unsigned, for demos)
