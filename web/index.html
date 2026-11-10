@@ -42,6 +42,10 @@
 
   <style>
     html, body { margin: 0; height: 100%; background: #01091A; }
+    /* iOS home-screen app with a translucent status bar: the page itself must
+       never scroll, or touches land below the finger (Flutter draws at the
+       top while the document stays scrolled, e.g. after the keyboard closes). */
+    html, body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }
     #splash {
       position: fixed; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 16px;
@@ -53,6 +57,23 @@
   </style>
 </head>
 <body>
+  <script>
+    // Same iOS bug, belt and braces: whenever the keyboard closes or the
+    // viewport changes, snap the document back to the top.
+    (function () {
+      function typing() {
+        var el = document.activeElement;
+        return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      }
+      function reset() {
+        if (typing()) return; // leave room for the keyboard while editing
+        if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+      }
+      window.addEventListener('focusout', function () { setTimeout(reset, 100); });
+      window.addEventListener('scroll', reset, { passive: true });
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', reset);
+    })();
+  </script>
   <div id="splash" aria-live="polite">
     <img src="icons/Icon-192.png" alt="">
     <p>Loading KubeCon Companion…</p>
