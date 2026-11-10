@@ -54,17 +54,20 @@ footer a:hover{color:var(--accent)}
 
   <section class="card" id="android">
     <h2>Android</h2>
-    <p>Get it from Google Play. It's a free open beta, so updates arrive automatically.</p>
-    <a class="btn" href="https://play.google.com/store/apps/details?id=io.codemagic.kubecon_companion">
+    <p>Install the app directly. No Play Store needed.</p>
+    <a class="btn" id="apk" href="#" download>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-      Get it on Google Play
+      Download the Android app
     </a>
     <ol>
-      <li>Tap the button to open the app in Google Play, then tap Install.</li>
-      <li>If Play asks you to join the test first, tap Become a tester, then Install.</li>
+      <li>Open the downloaded file.</li>
+      <li>If asked, allow installs from your browser, then tap Install.</li>
+      <li>If Play Protect asks about an unknown developer, tap More details, then Install anyway.</li>
     </ol>
-    <a class="btn subtle" id="apk" href="#" download style="margin-top:16px">Or download the APK directly</a>
-    <div class="meta" id="apk-meta">APK: about 57 MB · Android 7.0 or newer. Open the file, allow installs from your browser, then tap Install.</div>
+    <div class="meta" id="apk-meta">About 57 MB · Android 7.0 or newer</div>
+    <!-- Google Play open testing: show once the store page is live.
+    <a class="btn subtle" href="https://play.google.com/store/apps/details?id=io.codemagic.kubecon_companion" style="margin-top:16px">Or get it on Google Play</a>
+    -->
   </section>
 
   <section class="card" id="ios">
