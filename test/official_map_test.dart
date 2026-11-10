@@ -29,6 +29,16 @@ void main() {
       );
     }
 
+    test('Grand Ballroom rooms are entered from the ballroom corridor', () {
+      for (final k in ['j', 'h', 'bdf', 'gi', 'ace']) {
+        final path = planner.shortestPath(
+          OfficialMap.mainEntranceId,
+          'door-l1-grand-ballroom-$k',
+        )!;
+        expect(path[path.length - 2], startsWith('l1-gb-mid-'), reason: k);
+      }
+    });
+
     test('has every panel and the shared nodes', () {
       expect(
         map.regions.map((r) => r.id),

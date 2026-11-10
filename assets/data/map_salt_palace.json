@@ -622,7 +622,7 @@
   {
    "id": "door-l1-grand-ballroom-j",
    "x": 1858,
-   "y": 2017,
+   "y": 2119,
    "regionId": "sp-L1",
    "kind": "door",
    "label": "Grand Ballroom J door"
@@ -630,7 +630,7 @@
   {
    "id": "door-l1-grand-ballroom-h",
    "x": 1932,
-   "y": 2017,
+   "y": 2119,
    "regionId": "sp-L1",
    "kind": "door",
    "label": "Grand Ballroom H door"
@@ -638,7 +638,7 @@
   {
    "id": "door-l1-grand-ballroom-bdf",
    "x": 2082,
-   "y": 2017,
+   "y": 2119,
    "regionId": "sp-L1",
    "kind": "door",
    "label": "Grand Ballroom BDF door"
@@ -742,6 +742,22 @@
   {
    "id": "l1-gb-mid-gi",
    "x": 1895,
+   "y": 2137,
+   "regionId": "sp-L1",
+   "kind": "junction",
+   "label": "Grand Ballroom corridor"
+  },
+  {
+   "id": "l1-gb-mid-h",
+   "x": 1932,
+   "y": 2137,
+   "regionId": "sp-L1",
+   "kind": "junction",
+   "label": "Grand Ballroom corridor"
+  },
+  {
+   "id": "l1-gb-mid-j",
+   "x": 1858,
    "y": 2137,
    "regionId": "sp-L1",
    "kind": "junction",
@@ -1840,24 +1856,6 @@
    "hint": "Enter the Solutions Showcase Main Entrance on your left"
   },
   {
-   "from": "l1-lc-j",
-   "to": "door-l1-grand-ballroom-j",
-   "kind": "walk",
-   "hint": "Grand Ballroom J is on your right off the Lower Concourse"
-  },
-  {
-   "from": "l1-lc-h",
-   "to": "door-l1-grand-ballroom-h",
-   "kind": "walk",
-   "hint": "Grand Ballroom H is on your right off the Lower Concourse"
-  },
-  {
-   "from": "l1-lc-bdf",
-   "to": "door-l1-grand-ballroom-bdf",
-   "kind": "walk",
-   "hint": "Grand Ballroom BDF is on your right, across from the Info Desk"
-  },
-  {
    "from": "l1-lc-nf",
    "to": "l1-nf-n",
    "kind": "walk",
@@ -1928,12 +1926,6 @@
    "to": "l1-gb-mid-ace",
    "kind": "walk",
    "hint": "Walk along the Grand Ballroom corridor"
-  },
-  {
-   "from": "l1-gb-mid-ace",
-   "to": "l1-gb-mid-gi",
-   "kind": "walk",
-   "hint": "Continue along the Grand Ballroom corridor"
   },
   {
    "from": "l1-gb-mid-ace",
@@ -2708,6 +2700,42 @@
    "to": "l3-elev",
    "kind": "elevator",
    "hint": "Take the 255 elevator up to Level 3 (355 foyer)"
+  },
+  {
+   "from": "l1-gb-mid-ace",
+   "to": "l1-gb-mid-h",
+   "kind": "walk",
+   "hint": "Continue along the Grand Ballroom corridor"
+  },
+  {
+   "from": "l1-gb-mid-h",
+   "to": "l1-gb-mid-gi",
+   "kind": "walk",
+   "hint": "Continue along the Grand Ballroom corridor"
+  },
+  {
+   "from": "l1-gb-mid-gi",
+   "to": "l1-gb-mid-j",
+   "kind": "walk",
+   "hint": "Continue along the Grand Ballroom corridor"
+  },
+  {
+   "from": "l1-gb-mid-ace",
+   "to": "door-l1-grand-ballroom-bdf",
+   "kind": "walk",
+   "hint": "Grand Ballroom BDF is on your right, across from ACE"
+  },
+  {
+   "from": "l1-gb-mid-h",
+   "to": "door-l1-grand-ballroom-h",
+   "kind": "walk",
+   "hint": "Grand Ballroom H is on your right"
+  },
+  {
+   "from": "l1-gb-mid-j",
+   "to": "door-l1-grand-ballroom-j",
+   "kind": "walk",
+   "hint": "Grand Ballroom J is on your right, at the end of the corridor"
   }
  ],
  "geo": {
