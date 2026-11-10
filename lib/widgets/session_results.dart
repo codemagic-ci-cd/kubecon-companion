@@ -139,6 +139,8 @@ class SessionRowsList extends StatelessWidget {
               icon: expandedEnded ? Icons.expand_less : Icons.expand_more,
               label: expandedEnded
                   ? 'Hide ${r.count} ended'
+                  : r.label.isEmpty
+                  ? 'Show ${r.count} ended'
                   : '${r.label} · ${r.count} ended',
               onPressed: onToggleEnded,
             ),
@@ -150,7 +152,7 @@ class SessionRowsList extends StatelessWidget {
 }
 
 /// Sessions across all conference days, upcoming first, then what's on now,
-/// then a collapsed "Already ended" group. Headers read "Tue 10 · 9:00 AM".
+/// then a collapsed "Show N ended" group. Headers read "Tue 10 · 9:00 AM".
 class SessionResults extends StatefulWidget {
   const SessionResults({
     super.key,
@@ -209,7 +211,7 @@ class _SessionResultsState extends State<SessionResults> {
         now: w.now,
         expandedEnded: _showEnded,
         timeLabel: label,
-        endedLabel: 'Already ended',
+        endedLabel: '', // "Show N ended"
       ),
       header: w.summary == null && w.leading == null
           ? null

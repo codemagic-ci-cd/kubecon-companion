@@ -725,10 +725,10 @@ void main() {
     // The keynote at 9:00 has ended: collapsed at the bottom.
     expect(find.text('Session k1'), findsNothing);
     expect(
-      tester.getTopLeft(find.text('Already ended · 1 ended')).dy,
+      tester.getTopLeft(find.text('Show 1 ended')).dy,
       greaterThan(ys.last),
     );
-    await tester.tap(find.text('Already ended · 1 ended'));
+    await tester.tap(find.text('Show 1 ended'));
     await tester.pumpAndSettle();
     expect(find.text('Session k1'), findsOneWidget);
 
@@ -767,9 +767,9 @@ void main() {
     await pumpApp(tester, state);
     await tester.enterText(find.byType(TextField), 'session');
     await tester.pumpAndSettle();
-    expect(find.text('3 results across all days'), findsOneWidget);
+    expect(find.text('2 upcoming across all days'), findsOneWidget);
     expect(find.text('Coming up'), findsOneWidget);
-    expect(find.text('Already ended · 1 ended'), findsOneWidget);
+    expect(find.text('Show 1 ended'), findsOneWidget);
     // Tile pills stay informational: the tile itself opens the session.
     final pill = tester.widget<Pill>(
       find

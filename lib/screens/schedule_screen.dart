@@ -97,10 +97,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   Future<void> _openFilters(AppState app) async {
     final typeCounts = <String, int>{};
     final trackCounts = <String, int>{};
+    // Counts cover only sessions that haven't ended, like the results list.
     for (final s in app.data.sessions) {
-      typeCounts[s.type] = (typeCounts[s.type] ?? 0) + 1;
+      final open = s.end.isAfter(app.now) ? 1 : 0;
+      typeCounts[s.type] = (typeCounts[s.type] ?? 0) + open;
       if (s.track != null) {
-        trackCounts[s.track!] = (trackCounts[s.track!] ?? 0) + 1;
+        trackCounts[s.track!] = (trackCounts[s.track!] ?? 0) + open;
       }
     }
     final types = typeCounts.keys.toList()
@@ -200,6 +202,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
   }
 
+  /// "12 upcoming across all days": ended sessions aren't counted; they wait
+  /// behind the collapsed "ended" row like on the day tabs.
+  static String _summary(List<Session> results, DateTime now) {
+    final open = results.where((s) => s.end.isAfter(now)).length;
+    return open == 0
+        ? 'No upcoming sessions'
+        : '$open upcoming across all days';
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
@@ -294,8 +305,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 leading: _query.length < 2
                     ? null
                     : SponsorMatches.forQuery(app.sponsors, _query),
-                summary:
-                    '${results.length} ${results.length == 1 ? 'result' : 'results'} across all days',
+                summary: _summary(results, app.now),
               )
             : TabBarView(
                 controller: _tabs,
