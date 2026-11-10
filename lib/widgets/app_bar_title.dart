@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../screens/home_shell.dart';
 import '../screens/settings_screen.dart';
 import '../theme/brand.dart';
 import 'common.dart';
@@ -10,7 +11,20 @@ class AppBarTitle extends StatelessWidget {
   final String? subtitle;
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Home',
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => HomeShell.goHome(context),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: _title(context),
+      ),
+    ),
+  );
+
+  Widget _title(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [

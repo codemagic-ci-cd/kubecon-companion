@@ -40,6 +40,13 @@ class HomeShell extends StatefulWidget {
   /// after the first frame.
   final String? pendingSpot;
 
+  /// Goes back to the home page: the Schedule tab, with pushed screens closed.
+  static void goHome(BuildContext context) {
+    final state = context.findAncestorStateOfType<_HomeShellState>();
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    state?._select(HomeTabs.schedule);
+  }
+
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
@@ -47,6 +54,10 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   late int _index = widget.initialTab;
   AppState? _app;
+
+  void _select(int tab) {
+    if (_index != tab) setState(() => _index = tab);
+  }
 
   @override
   void didChangeDependencies() {

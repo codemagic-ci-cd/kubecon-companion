@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kubecon_companion/widgets/app_bar_title.dart';
 import 'package:kubecon_companion/widgets/session_tile.dart';
 import 'package:kubecon_companion/data/models.dart';
 import 'package:kubecon_companion/data/official_map.dart';
@@ -473,6 +474,21 @@ void main() {
       home: const DirectionsScreen(roomId: 'unknown-room'),
     );
     expect(find.text('Unknown Room'), findsOneWidget);
+  });
+
+  testWidgets('tapping the title banner goes back to the schedule', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await pumpApp(tester, state);
+
+    await tester.tap(find.text('Expo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Search sponsors, booths, topics'), findsOneWidget);
+
+    await tester.tap(find.byType(AppBarTitle).hitTestable().first);
+    await tester.pumpAndSettle();
+    expect(find.text('Search talks, speakers, companies'), findsOneWidget);
   });
 
   testWidgets('map, now and saved tabs render', (tester) async {
