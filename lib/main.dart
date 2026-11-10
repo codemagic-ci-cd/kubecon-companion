@@ -15,6 +15,7 @@ import 'state/app_scope.dart';
 import 'state/app_state.dart';
 import 'theme/brand.dart';
 import 'widgets/link_router.dart';
+import 'data/session_link.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,9 @@ Future<void> main() async {
   );
   final agenda = agendaParam(Uri.base);
   final spot = agenda == null ? spotParamFrom(Uri.base) : null;
+  final session = agenda == null && spot == null
+      ? sessionParamFrom(Uri.base)
+      : null;
   runApp(
     KubeConApp(
       state: state,
@@ -50,6 +54,7 @@ Future<void> main() async {
           : initialTabFor(Uri.base),
       pendingAgenda: agenda,
       pendingSpot: spot,
+      pendingSession: session,
       links: incomingLinks(),
     ),
   );
@@ -100,6 +105,7 @@ class KubeConApp extends StatelessWidget {
     this.initialTab = 0,
     this.pendingAgenda,
     this.pendingSpot,
+    this.pendingSession,
     this.links,
   });
   final AppState state;
@@ -111,6 +117,9 @@ class KubeConApp extends StatelessWidget {
 
   /// Spot payload (`?at=`) from the launch URL, pinned on the map once up.
   final String? pendingSpot;
+
+  /// Session id from a shared session link (web `?session=`).
+  final String? pendingSession;
 
   /// Links opening the native app: shared agendas and spots.
   final Stream<Uri>? links;
@@ -138,6 +147,7 @@ class KubeConApp extends StatelessWidget {
                 initialTab: initialTab,
                 pendingAgenda: pendingAgenda,
                 pendingSpot: pendingSpot,
+                pendingSession: pendingSession,
               ),
             ),
       ),

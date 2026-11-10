@@ -2,10 +2,28 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["X8NNQ9CYL2.io.codemagic.kubeconCompanion"],
+        "appIDs": [
+          "X8NNQ9CYL2.io.codemagic.kubeconCompanion"
+        ],
         "components": [
-          { "?": { "agenda": "*" }, "comment": "agenda import" },
-          { "?": { "at": "*" }, "comment": "shared spot" }
+          {
+            "?": {
+              "agenda": "*"
+            },
+            "comment": "agenda import"
+          },
+          {
+            "?": {
+              "at": "*"
+            },
+            "comment": "shared spot"
+          },
+          {
+            "?": {
+              "session": "*"
+            },
+            "comment": "shared session"
+          }
         ]
       }
     ]

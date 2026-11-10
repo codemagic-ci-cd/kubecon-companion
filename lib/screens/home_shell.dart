@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../data/agenda_link.dart';
+import '../data/session_link.dart';
 import '../data/spot_link.dart';
 import '../services/web_url.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../widgets/agenda_share.dart';
-import '../widgets/link_router.dart' show openSpotLink;
+import '../widgets/link_router.dart' show openSessionLink, openSpotLink;
 
 import 'expo_screen.dart';
 import 'map_screen.dart';
@@ -32,6 +33,7 @@ class HomeShell extends StatefulWidget {
     this.initialTab = 0,
     this.pendingAgenda,
     this.pendingSpot,
+    this.pendingSession,
   });
   final int initialTab;
 
@@ -42,6 +44,10 @@ class HomeShell extends StatefulWidget {
   /// Spot payload from a shared spot link (web `?at=`), pinned on the map
   /// after the first frame.
   final String? pendingSpot;
+
+  /// Session id from a shared session link (web `?session=`), opened after
+  /// the first frame.
+  final String? pendingSession;
 
   /// Goes back to the home page: the Schedule tab, with pushed screens closed.
   static void goHome(BuildContext context) {
@@ -116,6 +122,14 @@ class _HomeShellState extends State<HomeShell> {
         removeQueryParam(kAgendaParam);
         if (!mounted) return;
         await confirmAgendaImport(context, AppScope.of(context), payload);
+      });
+    }
+    final session = widget.pendingSession;
+    if (session != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        removeQueryParam(kSessionParam);
+        if (!mounted) return;
+        openSessionLink(context, AppScope.read(context), session);
       });
     }
     final spot = widget.pendingSpot;

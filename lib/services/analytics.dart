@@ -28,6 +28,7 @@ abstract final class Events {
   static const shareAgenda = 'Share agenda';
   static const importAgenda = 'Import agenda';
   static const shareSpot = 'Share spot';
+  static const shareSession = 'Share session';
   static const sponsorOpen = 'Sponsor open';
   static const refresh = 'Refresh';
 }

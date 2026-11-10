@@ -15,6 +15,7 @@ import 'directions_screen.dart';
 import 'tagged_sessions_screen.dart';
 import '../services/analytics.dart';
 import '../widgets/track_view.dart';
+import '../widgets/session_share.dart';
 
 class SessionDetailScreen extends StatelessWidget {
   const SessionDetailScreen({super.key, required this.sessionId});
@@ -72,6 +73,15 @@ class SessionDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          IconButton(
+            tooltip: 'Share session',
+            onPressed: () => SessionShareSheet.show(
+              context,
+              s,
+              place: app.data.locate(s.roomId).label,
+            ),
+            icon: Icon(Icons.ios_share, color: b.icon),
+          ),
           IconButton(
             tooltip: saved ? 'Remove from saved' : 'Save',
             onPressed: () => app.toggleSaved(s.id),

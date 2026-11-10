@@ -850,6 +850,36 @@ void main() {
     expect(state.prefs!.getStringList('schedule_filter_types'), isEmpty);
   });
 
+  testWidgets('a session can be shared with a link and QR code', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await pumpApp(
+      tester,
+      state,
+      home: const SessionDetailScreen(sessionId: 't1'),
+    );
+    await tester.tap(find.byTooltip('Share session'));
+    await tester.pumpAndSettle();
+    expect(find.text('Share session'), findsOneWidget);
+    expect(find.byKey(const ValueKey('session-qr')), findsOneWidget);
+    expect(
+      find.text('https://kubecon.codemagic.app/?session=t1'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a shared session link opens that session', (tester) async {
+    final state = await makeState();
+    tester.view.physicalSize = const Size(375 * 3, 812 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(KubeConApp(state: state, pendingSession: 't1'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SessionDetailScreen), findsOneWidget);
+    expect(find.text('Scaling CI on Kubernetes'), findsWidgets);
+  });
+
   testWidgets('session page links to the full schedule of its room', (
     tester,
   ) async {

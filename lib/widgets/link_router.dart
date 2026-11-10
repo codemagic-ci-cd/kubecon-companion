@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/agenda_link.dart';
+import '../data/session_link.dart';
 import '../data/spot_link.dart';
+import '../screens/session_detail_screen.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import 'agenda_share.dart';
@@ -31,6 +33,8 @@ sealed class AppLink {
     if (agenda != null) return AgendaAppLink(agenda);
     final spot = spotParamFrom(uri);
     if (spot != null) return SpotAppLink(spot);
+    final session = sessionParamFrom(uri);
+    if (session != null) return SessionAppLink(session);
     return null;
   }
 
@@ -52,6 +56,29 @@ class SpotAppLink extends AppLink {
   final String payload;
   @override
   String get key => 'at:$payload';
+}
+
+/// `?session=ID`: open that session's page.
+class SessionAppLink extends AppLink {
+  const SessionAppLink(this.id);
+  final String id;
+  @override
+  String get key => 'session:$id';
+}
+
+/// Opens the page of session [id], or says the link is stale.
+void openSessionLink(BuildContext context, AppState app, String id) {
+  if (app.data.session(id) == null) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      const SnackBar(
+        content: Text("That session isn't on the current schedule."),
+      ),
+    );
+    return;
+  }
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => SessionDetailScreen(sessionId: id)),
+  );
 }
 
 /// Pins a shared spot from [payload], or says the link is broken.
@@ -122,6 +149,8 @@ class _LinkRouterState extends State<LinkRouter> {
           await confirmAgendaImport(context, app, payload);
         case SpotAppLink(:final payload):
           openSpotLink(context, app, payload);
+        case SessionAppLink(:final id):
+          openSessionLink(context, app, id);
       }
     } finally {
       _busy = false;
