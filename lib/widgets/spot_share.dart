@@ -16,6 +16,7 @@ import '../state/app_state.dart';
 import '../theme/brand.dart';
 import 'agenda_share.dart' show CopyLinkButton, LinkQr;
 import 'common.dart';
+import '../services/analytics.dart';
 
 /// A room or sponsor booth picked as the spot.
 class SpotPick {
@@ -181,6 +182,7 @@ class _SpotShareSheetState extends State<SpotShareSheet> {
   }
 
   Future<void> _share(BuildContext btnContext, SharedSpot spot) async {
+    track(Events.shareSpot);
     _app.spotName = spot.name;
     final link = spotLink(spot);
     final box = btnContext.findRenderObject() as RenderBox?;

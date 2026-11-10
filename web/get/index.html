@@ -13,6 +13,8 @@
 <meta property="og:image" content="https://kubecon.codemagic.app/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.png">
+<!-- Plausible queue: events wait here until the Plausible script loads. -->
+<script>window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };</script>
 <link rel="apple-touch-icon" href="/icons/Icon-192.png">
 <style>
 @font-face{font-family:Metropolis;src:url(/assets/assets/fonts/Metropolis-Regular.otf) format("opentype");font-weight:400;font-display:swap}
@@ -55,7 +57,7 @@ footer a:hover{color:var(--accent)}
   <section class="card" id="android">
     <h2>Android</h2>
     <p>Install the app directly. No Play Store needed.</p>
-    <a class="btn" id="apk" href="#" download>
+    <a class="btn" id="apk" href="#" download data-install="Android APK">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
       Download the Android app
     </a>
@@ -73,7 +75,7 @@ footer a:hover{color:var(--accent)}
   <section class="card" id="ios">
     <h2>iPhone</h2>
     <p>Get the native app through Apple's TestFlight. It's free and takes a minute.</p>
-    <a class="btn" href="https://testflight.apple.com/join/6C6Y3Vts">
+    <a class="btn" href="https://testflight.apple.com/join/6C6Y3Vts" data-install="iPhone TestFlight">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
       Get the iPhone app
     </a>
@@ -81,14 +83,14 @@ footer a:hover{color:var(--accent)}
       <li>Tap the button, then install TestFlight from the App Store if asked.</li>
       <li>Back on the TestFlight page, tap Accept, then Install.</li>
     </ol>
-    <a class="btn subtle" href="/" style="margin-top:16px">Or use the web app</a>
+    <a class="btn subtle" href="/" style="margin-top:16px" data-install="Web app">Or use the web app</a>
     <div class="meta">Web app: open it in Safari, tap Share, then Add to Home Screen.</div>
   </section>
 
   <section class="card" id="web">
     <h2>Any device</h2>
     <p>Use it right in the browser. Nothing to install.</p>
-    <a class="btn subtle" href="/">Open kubecon.codemagic.app</a>
+    <a class="btn subtle" href="/" data-install="Web app">Open kubecon.codemagic.app</a>
   </section>
 
   <footer>Built and shipped with <a href="https://codemagic.io/?utm_source=kubecon-companion&amp;utm_medium=get-page">Codemagic</a>: one Flutter codebase, three platforms. <a href="https://github.com/codemagic-ci-cd/kubecon-companion">See the source on GitHub</a>.</footer>
@@ -97,6 +99,12 @@ footer a:hover{color:var(--accent)}
 // Latest signed APK from the Codemagic build (public link valid until 2026-11-14).
 var APK_URL = "https://api.codemagic.io/artifacts/.eJwVwcuyQzAAANB_6d5MtGgsukBVX0IjRth0tMElFeqV9u8795xVZf2z37DTW36W0Ep0ricbVgkDg-0j1oKrl8Y-6q2mLf9UDyRcBvdvxrs54nviWFyB03ArFkld2gJufPz2hTw17_Q0QICL892MxiYQpLlgNdM9LMfO2uYjF_GJruGtUNy1R6lRxnd-Oj2YFZ9Rl5fsGpAttFVwQ1rWA7Ou_Xzhs6EVoVE6pmtOw3qij6p2ZNfMIUERiWCVYFcLJUz1Y_nE9Zwr5auy9_TZNwlwcX1kKrLZuw69CFy0JZWVQvAndemweU2t2XzRQYQyOcosZFmRjuLAuNztVj-LDGGo.UM4u9gJoG5KCUe8owgv7aWHtR1I";
 document.getElementById('apk').href = APK_URL;
+// Count install button taps (Plausible custom event "Install").
+document.querySelectorAll('[data-install]').forEach(function (a) {
+  a.addEventListener('click', function () {
+    window.plausible('Install', { props: { platform: a.getAttribute('data-install') } });
+  });
+});
 (function () {
   var ua = navigator.userAgent || '';
   var isAndroid = /Android/i.test(ua);

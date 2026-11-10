@@ -4,6 +4,7 @@ import '../data/ics.dart';
 import '../data/models.dart';
 import '../services/calendar_export.dart';
 import '../state/app_state.dart';
+import '../services/analytics.dart';
 
 /// Builds an .ics for [sessions] and hands it to the platform. One session
 /// gets `kubecon-<title-slug>.ics`, several `kubecon-agenda.ics`. Shows a
@@ -14,6 +15,7 @@ Future<void> exportToCalendar(
   List<Session> sessions,
 ) async {
   if (sessions.isEmpty) return;
+  track(Events.calendar);
   final messenger = ScaffoldMessenger.of(anchor);
   final box = anchor.findRenderObject() as RenderBox?;
   final origin = box == null || !box.hasSize

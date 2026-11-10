@@ -13,6 +13,9 @@ import 'map_screen.dart';
 import 'now_screen.dart';
 import 'saved_screen.dart';
 import 'schedule_screen.dart';
+import '../services/analytics.dart';
+
+const _tabNames = ['Schedule', 'Map', 'Now', 'Expo', 'Saved'];
 
 /// Bottom navigation tab indexes.
 abstract final class HomeTabs {
@@ -56,7 +59,9 @@ class _HomeShellState extends State<HomeShell> {
   AppState? _app;
 
   void _select(int tab) {
-    if (_index != tab) setState(() => _index = tab);
+    if (_index == tab) return;
+    track(Events.tab, {'tab': _tabNames[tab]});
+    setState(() => _index = tab);
   }
 
   @override
@@ -137,7 +142,7 @@ class _HomeShellState extends State<HomeShell> {
     ),
     bottomNavigationBar: NavigationBar(
       selectedIndex: _index,
-      onDestinationSelected: (i) => setState(() => _index = i),
+      onDestinationSelected: _select,
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.calendar_today_outlined),

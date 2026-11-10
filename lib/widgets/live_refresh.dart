@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/venue_time.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
+import '../services/analytics.dart';
 
 /// Snack text for a finished refresh.
 String refreshMessage(RefreshResult r) =>
@@ -42,6 +43,7 @@ class _LiveRefreshState extends State<LiveRefresh> {
   }
 
   Future<void> _refresh() async {
+    track(Events.refresh);
     final app = AppScope.read(context);
     final messenger = ScaffoldMessenger.maybeOf(context);
     final result = await app.refresh();

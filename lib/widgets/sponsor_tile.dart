@@ -4,6 +4,7 @@ import '../data/sponsors.dart';
 import '../state/app_scope.dart';
 import '../theme/brand.dart';
 import 'common.dart';
+import '../services/analytics.dart';
 
 /// A sponsor row: name, booth and hall, solution categories. Tap for details.
 class SponsorTile extends StatelessWidget {
@@ -84,6 +85,7 @@ class SponsorTile extends StatelessWidget {
 }
 
 Future<void> showSponsorSheet(BuildContext context, Sponsor sponsor) {
+  track(Events.sponsorOpen, {'sponsor': sponsor.name});
   final app = AppScope.read(context);
   return showModalBottomSheet<void>(
     context: context,

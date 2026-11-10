@@ -7,6 +7,7 @@ import '../screens/tagged_sessions_screen.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
+import '../services/analytics.dart';
 
 /// Whether [s] takes place in [room] or one of its sub-rooms
 /// (e.g. "Grand Ballroom B" inside "Grand Ballroom BDF").
@@ -22,6 +23,7 @@ List<Session> sessionsInRoom(AppState app, Room room) =>
 
 /// Opens the full schedule of [room], upcoming first.
 void openRoomSchedule(BuildContext context, Room room) {
+  track(Events.roomSchedule, {'room': room.name});
   final app = AppScope.read(context);
   Navigator.of(context).push(
     MaterialPageRoute<void>(

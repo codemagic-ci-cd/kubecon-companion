@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'common.dart';
+import '../services/analytics.dart';
 
 /// Install page that the booth QR code points to.
 const kGetAppUrl = 'https://kubecon.codemagic.app/get/';
@@ -31,6 +32,7 @@ class ShareAppSheet extends StatelessWidget {
   );
 
   Future<void> _share(BuildContext context) async {
+    track(Events.shareApp);
     final box = context.findRenderObject() as RenderBox?;
     try {
       await SharePlus.instance.share(

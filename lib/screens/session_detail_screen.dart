@@ -13,6 +13,8 @@ import '../widgets/common.dart';
 import '../widgets/speaker_card.dart';
 import 'directions_screen.dart';
 import 'tagged_sessions_screen.dart';
+import '../services/analytics.dart';
+import '../widgets/track_view.dart';
 
 class SessionDetailScreen extends StatelessWidget {
   const SessionDetailScreen({super.key, required this.sessionId});
@@ -36,7 +38,16 @@ class SessionDetailScreen extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TrackView(
+    event: Events.sessionOpen,
+    props: {
+      'session':
+          AppScope.read(context).data.session(sessionId)?.title ?? sessionId,
+    },
+    child: Builder(builder: _build),
+  );
+
+  Widget _build(BuildContext context) {
     final app = AppScope.of(context);
     // Schedule data right away; description, prerequisites and speaker bios
     // are merged in once details.json has loaded.

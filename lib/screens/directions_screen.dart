@@ -8,6 +8,8 @@ import '../services/location_service.dart';
 import 'map_directions.dart';
 import 'outdoor_directions.dart';
 import '../outdoor/outdoor_loader.dart';
+import '../services/analytics.dart';
+import '../widgets/track_view.dart';
 
 IconData stepIcon(StepKind kind) => switch (kind) {
   StepKind.start => Icons.door_front_door_outlined,
@@ -45,7 +47,13 @@ class DirectionsScreen extends StatelessWidget {
   final OutdoorLoader outdoorLoader;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TrackView(
+    event: Events.directions,
+    props: {'to': AppScope.read(context).data.locate(roomId).label},
+    child: Builder(builder: _build),
+  );
+
+  Widget _build(BuildContext context) {
     final app = AppScope.of(context);
     final loc = app.data.locate(roomId);
     final map = app.data.officialMap;

@@ -9,6 +9,7 @@ import '../data/agenda_link.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
 import 'common.dart';
+import '../services/analytics.dart';
 
 /// A QR code and link that carry the user's saved sessions, so someone else
 /// can import them. No backend: everything is in the link.
@@ -26,6 +27,7 @@ class AgendaShareSheet extends StatelessWidget {
       );
 
   Future<void> _share(BuildContext context, String link, int count) async {
+    track(Events.shareAgenda);
     final box = context.findRenderObject() as RenderBox?;
     try {
       await SharePlus.instance.share(
@@ -245,6 +247,7 @@ Future<int> confirmAgendaImport(
   );
   if (ok != true) return 0;
   final added = await app.importSaved(fresh.map((s) => s.id));
+  track(Events.importAgenda);
   say('Added $added ${added == 1 ? 'session' : 'sessions'} to Saved.');
   return added;
 }

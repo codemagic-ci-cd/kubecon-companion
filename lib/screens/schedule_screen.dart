@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../data/models.dart';
@@ -15,6 +16,7 @@ import '../widgets/speaker_card.dart';
 import '../widgets/sponsor_tile.dart';
 import '../widgets/live_refresh.dart';
 import 'expo_screen.dart';
+import '../services/analytics.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -105,6 +107,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       ..sort((a, b) => typeCounts[b]!.compareTo(typeCounts[a]!));
     final tracks = trackCounts.keys.toList()..sort();
 
+    final before = {..._types, ..._tracks};
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -188,6 +191,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         },
       ),
     );
+    final after = {..._types, ..._tracks};
+    if (after.isNotEmpty && !setEquals(before, after)) {
+      track(Events.filter, {
+        'types': (_types.toList()..sort()).join(', '),
+        'tracks': (_tracks.toList()..sort()).join(', '),
+      });
+    }
   }
 
   @override
@@ -216,7 +226,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     Expanded(
                       child: TextField(
                         controller: _search,
-                        onChanged: (v) => setState(() => _query = v.trim()),
+                        onChanged: (v) {
+                          final q = v.trim();
+                          // Count a search once, never its text.
+                          if (_query.isEmpty && q.isNotEmpty) {
+                            track(Events.search);
+                          }
+                          setState(() => _query = q);
+                        },
                         textInputAction: TextInputAction.search,
                         decoration: InputDecoration(
                           hintText: 'Search talks, speakers, companies',

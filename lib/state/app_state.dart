@@ -14,6 +14,7 @@ import '../data/sponsors.dart';
 import '../data/spot_link.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
+import '../services/analytics.dart';
 
 /// Everything bundled in assets/data that the first screen needs, parsed.
 /// Long text (descriptions, bios) is in details.json, see [AppState.loadDetails].
@@ -553,6 +554,7 @@ class AppState extends ChangeNotifier {
   Future<void> toggleSaved(String id) async {
     final adding = !_saved.contains(id);
     if (adding) {
+      track(Events.save);
       _saved.add(id);
     } else {
       _saved.remove(id);
@@ -612,6 +614,7 @@ class AppState extends ChangeNotifier {
       _scheduleSoon();
       return false;
     }
+    track(Events.reminder);
     if (_saved.contains(id)) {
       _muted.remove(id);
       prefs?.setStringList(_kMuted, _muted.toList());
