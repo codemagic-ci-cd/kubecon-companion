@@ -193,6 +193,16 @@ class AboutCard extends StatelessWidget {
               onPressed: () => openLink(context, 'https://codemagic.io'),
             ),
           ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton(
+              onPressed: () => openLink(
+                context,
+                'https://kubecon.codemagic.app/privacy/index.html',
+              ),
+              child: const Text('Privacy policy'),
+            ),
+          ),
         ],
       ),
     );
