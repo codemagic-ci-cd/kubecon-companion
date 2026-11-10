@@ -10,6 +10,7 @@ import '../services/location_service.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
+import '../widgets/room_schedule.dart';
 import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
 import '../widgets/official_map_view.dart';
@@ -702,6 +703,16 @@ class RoomSheet extends StatelessWidget {
               child: Text(
                 'Nothing else scheduled here.',
                 style: text.bodySmall,
+              ),
+            ),
+          if (sessionsInRoom(app, room).isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: SubtleButton(
+                icon: Icons.event_note,
+                label:
+                    'All ${sessionsInRoom(app, room).length} sessions in this room',
+                onPressed: () => openRoomSchedule(context, room),
               ),
             ),
         ],

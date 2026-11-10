@@ -146,6 +146,12 @@ void main() {
     expect(find.text('About t1'), findsOneWidget);
     expect(find.text('Before you go'), findsOneWidget);
     expect(find.text('Laptop with kind installed'), findsOneWidget);
+    // The speaker card sits further down the (lazy) page.
+    await tester.scrollUntilVisible(
+      find.text('LinkedIn'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Builds things.'), findsOneWidget);
     expect(find.text('LinkedIn'), findsOneWidget);
   });
@@ -755,5 +761,24 @@ void main() {
           .first,
     );
     expect(pill.onTap, isNull);
+  });
+
+  testWidgets('session page links to the full schedule of its room', (
+    tester,
+  ) async {
+    final state = await makeState();
+    await pumpApp(
+      tester,
+      state,
+      home: const SessionDetailScreen(sessionId: 't1'),
+    );
+    final link = find.textContaining('sessions in Room 250 A-C');
+    expect(link, findsOneWidget);
+    await tester.tap(link);
+    await tester.pumpAndSettle();
+    expect(find.byType(TaggedSessionsScreen), findsOneWidget);
+    // The app bar shows the room name; the list includes the session itself.
+    expect(find.text('Room 250 A-C'), findsWidgets);
+    expect(find.text('Scaling CI on Kubernetes'), findsWidgets);
   });
 }

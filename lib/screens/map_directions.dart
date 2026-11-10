@@ -11,6 +11,7 @@ import '../services/location_service.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
+import '../widgets/room_schedule.dart';
 import '../widgets/common.dart';
 import '../widgets/official_map_view.dart';
 import 'map_screen.dart';
@@ -704,6 +705,7 @@ class _MapDirectionsState extends State<MapDirections>
                       ],
                     ),
                   ],
+                  RoomNextStrip(room: widget.room),
                   mapCredit(context, _map, (url) => openLink(context, url)),
                 ],
               ),

@@ -7,6 +7,7 @@ import '../services/notification_service.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
 import '../theme/brand.dart';
+import '../widgets/room_schedule.dart';
 import '../widgets/calendar_export.dart';
 import '../widgets/common.dart';
 import '../widgets/speaker_card.dart';
@@ -125,6 +126,22 @@ class SessionDetailScreen extends StatelessWidget {
                     ),
                   ),
           ),
+          if (loc is RoomLocation)
+            Padding(
+              padding: const EdgeInsets.only(left: 44),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => openRoomSchedule(context, loc.room),
+                  icon: const Icon(Icons.event_note, size: 18),
+                  label: Text(
+                    'All ${sessionsInRoom(app, loc.room).length} sessions in ${loc.room.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 16),
           Row(
             children: [
