@@ -194,6 +194,18 @@ class AboutCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.code),
+              label: const Text('Source code on GitHub'),
+              onPressed: () => openLink(
+                context,
+                'https://github.com/codemagic-ci-cd/kubecon-companion',
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Center(
             child: TextButton(
               onPressed: () => openLink(
