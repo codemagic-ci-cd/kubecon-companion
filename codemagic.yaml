@@ -156,3 +156,6 @@ workflows:
         # Submits each build for external TestFlight beta review (needs TestFlight
         # Test Information filled in once in App Store Connect).
         submit_to_testflight: true
+        # Adds each build to the public TestFlight group (the testflight.apple.com/join link).
+        beta_groups:
+          - KubeCon visitors
