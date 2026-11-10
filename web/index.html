@@ -19,7 +19,7 @@
   <!-- iOS home screen -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="KubeCon">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -42,9 +42,10 @@
 
   <style>
     html, body { margin: 0; height: 100%; background: #01091A; }
-    /* iOS home-screen app with a translucent status bar: the page itself must
-       never scroll, or touches land below the finger (Flutter draws at the
-       top while the document stays scrolled, e.g. after the keyboard closes). */
+    /* iOS home-screen app: the page itself must never scroll, or touches land
+       below the finger (Flutter draws at the top while the document is
+       scrolled). The status bar is solid "black", not "black-translucent", so
+       iOS starts the page below it instead of under it. */
     html, body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }
     #splash {
       position: fixed; inset: 0; display: flex; flex-direction: column;
@@ -58,8 +59,8 @@
 </head>
 <body>
   <script>
-    // Same iOS bug, belt and braces: whenever the keyboard closes or the
-    // viewport changes, snap the document back to the top.
+    // Same iOS bug, belt and braces: whenever the viewport changes or the
+    // document scrolls, snap it back to the top.
     (function () {
       function typing() {
         var el = document.activeElement;
