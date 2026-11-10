@@ -36,7 +36,8 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <!-- Shared agenda links (https://kubecon.codemagic.app/?agenda=a1.…) open
-                 the app, which offers the import; shared spots (?at=v1.…) open the map. Only the root path matches, so
+                 the app, which offers the import; shared spots (?at=v1.…) open the map; shared session pages
+                 (/s/ID.html) open that session. Only the root path and /s/ match, so
                  /get/ and other pages keep opening in the browser. Verified via
                  web/.well-known/assetlinks.json. -->
             <intent-filter android:autoVerify="true">
@@ -44,6 +45,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="kubecon.codemagic.app" android:path="/"/>
+                <data android:pathPrefix="/s/"/>
             </intent-filter>
             <!-- Links are read by the app_links plugin, not Flutter's router. -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>

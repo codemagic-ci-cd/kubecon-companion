@@ -864,7 +864,7 @@ void main() {
     expect(find.text('Share session'), findsOneWidget);
     expect(find.byKey(const ValueKey('session-qr')), findsOneWidget);
     expect(
-      find.text('https://kubecon.codemagic.app/?session=t1'),
+      find.text('https://kubecon.codemagic.app/s/t1.html'),
       findsOneWidget,
     );
   });

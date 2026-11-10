@@ -36,6 +36,7 @@ Everything the app shows comes from `assets/data/*.json`, which is bundled with 
 | Script | Output |
 | --- | --- |
 | `tool/build_sessions.py` | `schedule.json` (loaded at startup), `details.json` (descriptions and bios, loaded after the first frame) and `rooms_raw.json`, from the public Sessionize feed for the official schedule |
+| `tool/build_share_pages.py` | `web/s/<id>.html`: one static page per session with its own link preview (title, time, room, speakers), forwarding to the app. Rerun after `build_sessions.py` |
 | `tool/build_venue.py` | `venue.json`: levels, rooms, landmarks, directions and off-site venues |
 | `tool/build_happenings.py` | `happenings.json` and `info.json` |
 | `tool/make_icons.py` | PWA, Android and iOS icons, with no dependencies |

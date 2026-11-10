@@ -7,6 +7,10 @@
         ],
         "components": [
           {
+            "/": "/s/*",
+            "comment": "shared session page"
+          },
+          {
             "?": {
               "agenda": "*"
             },
