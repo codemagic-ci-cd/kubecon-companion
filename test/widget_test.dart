@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kubecon_companion/widgets/official_map_view.dart';
 import 'package:kubecon_companion/widgets/app_bar_title.dart';
 import 'package:kubecon_companion/widgets/session_tile.dart';
 import 'package:kubecon_companion/data/models.dart';
@@ -220,6 +221,54 @@ void main() {
     await tester.tap(find.byTooltip('Next step'));
     await pumpFor(tester, 1);
     expect(find.text('Take the elevator up to Level 2'), findsOneWidget);
+    await pumpFor(tester, 2);
+  });
+
+  testWidgets('pulling the instructions down enlarges the map', (tester) async {
+    final state = await makeState();
+    tester.view.physicalSize = const Size(375 * 3, 812 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      KubeConApp(
+        state: state,
+        home: DirectionsScreen(
+          roomId: 'l2-250',
+          locate: () async => const LocationFailure('No location in tests'),
+        ),
+      ),
+    );
+    await pumpFor(tester, 1);
+    final mapBefore = tester.getSize(find.byType(OfficialMapView)).height;
+
+    await tester.fling(
+      find.text('From 200 South entrance'),
+      const Offset(0, 300),
+      1000,
+    );
+    await pumpFor(tester, 1);
+    // Collapsed: one line, no chips, a taller map.
+    expect(find.text('From 200 South entrance'), findsNothing);
+    expect(find.textContaining('Step 1 of'), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(OfficialMapView)).height,
+      greaterThan(mapBefore + 100),
+    );
+    // Arrows still step through the route.
+    await tester.tap(find.byTooltip('Next step'));
+    await pumpFor(tester, 1);
+    expect(find.text('Take the escalator up to Level 2'), findsOneWidget);
+    await pumpFor(tester, 2);
+
+    // Pull up to bring the instructions back, on the same step.
+    await tester.fling(
+      find.text('Take the escalator up to Level 2'),
+      const Offset(0, -300),
+      1000,
+    );
+    await pumpFor(tester, 1);
+    expect(find.text('From 200 South entrance'), findsOneWidget);
+    expect(find.textContaining('Step 2 of'), findsOneWidget);
     await pumpFor(tester, 2);
   });
 

@@ -115,6 +115,10 @@ class _MapDirectionsState extends State<MapDirections>
   StartPoint _start = _entrances.first;
   bool _stepFree = false;
   int _step = 0;
+
+  /// Instructions pulled down to a one-line bar so the map gets the screen.
+  bool _collapsed = false;
+  double _dragDy = 0;
   MapRoute? _route;
   String? _toast;
   Timer? _toastTimer;
@@ -609,110 +613,244 @@ class _MapDirectionsState extends State<MapDirections>
           color: Theme.of(context).scaffoldBackgroundColor,
           child: SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: GestureDetector(
+              // Pull the instructions down to enlarge the map, up to bring
+              // them back.
+              behavior: HitTestBehavior.translucent,
+              onVerticalDragStart: (_) => _dragDy = 0,
+              onVerticalDragUpdate: (d) => _dragDy += d.delta.dy,
+              onVerticalDragEnd: (d) {
+                // A quick flick or a slow pull of ~40 px both count.
+                final v = d.primaryVelocity ?? 0;
+                final down = v > 150 || _dragDy > 40;
+                final up = v < -150 || _dragDy < -40;
+                if (down && !_collapsed) setState(() => _collapsed = true);
+                if (up && _collapsed) setState(() => _collapsed = false);
+              },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: ActionChip(
-                          avatar: _locating
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(_start.icon, size: 18),
-                          label: Text(
-                            _start.chipLabel,
-                            semanticsLabel: _start.semanticLabel,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          tooltip: 'Change start point',
-                          onPressed: _pickStart,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      FilterChip(
-                        avatar: const Icon(Icons.accessible, size: 18),
-                        label: const Text('Step-free'),
-                        tooltip:
-                            'Prefer elevators, avoid escalators and stairs',
-                        selected: _stepFree,
-                        showCheckmark: false,
-                        onSelected: (v) {
-                          _stepFree = v;
-                          _replan();
-                        },
-                      ),
-                    ],
+                  _PanelHandle(
+                    collapsed: _collapsed,
+                    onTap: () => setState(() => _collapsed = !_collapsed),
                   ),
-                  _startNote(context),
-                  const SizedBox(height: 8),
-                  if (rt == null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        'No route found from here. Try another start point or ask at any Info Desk.',
-                        style: text.bodyMedium,
-                      ),
-                    )
-                  else ...[
-                    SizedBox(
-                      height: 176,
-                      child: PageView.builder(
-                        controller: _pages,
-                        itemCount: rt.steps.length,
-                        onPageChanged: _onPage,
-                        itemBuilder: (context, i) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: _StepCard(
-                            step: rt.steps[i],
-                            index: i,
-                            count: rt.steps.length,
-                            onOpenMaps: (url) => openLink(context, url),
-                          ),
-                        ),
-                      ),
+                  if (_collapsed && rt != null)
+                    _CollapsedStep(
+                      step: rt.steps[_step],
+                      index: _step,
+                      count: rt.steps.length,
+                      onPrev: _step > 0 ? () => _goTo(_step - 1) : null,
+                      onNext: _step < rt.steps.length - 1
+                          ? () => _goTo(_step + 1)
+                          : null,
+                      onExpand: () => setState(() => _collapsed = false),
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          tooltip: 'Previous step',
-                          onPressed: _step > 0 ? () => _goTo(_step - 1) : null,
-                          icon: const Icon(Icons.chevron_left),
-                        ),
-                        Expanded(
-                          child: _Dots(
-                            count: rt.steps.length,
-                            index: _step,
-                            steps: rt.steps,
-                            onTap: _goTo,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Next step',
-                          onPressed: _step < rt.steps.length - 1
-                              ? () => _goTo(_step + 1)
-                              : null,
-                          icon: const Icon(Icons.chevron_right),
-                        ),
-                      ],
-                    ),
-                  ],
-                  RoomNextStrip(room: widget.room),
-                  mapCredit(context, _map, (url) => openLink(context, url)),
+                  // Kept in the tree while collapsed so the step pager keeps
+                  // its page.
+                  Offstage(
+                    offstage: _collapsed && rt != null,
+                    child: _fullPanel(context, rt),
+                  ),
                 ],
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _fullPanel(BuildContext context, MapRoute? rt) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: ActionChip(
+                  avatar: _locating
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(_start.icon, size: 18),
+                  label: Text(
+                    _start.chipLabel,
+                    semanticsLabel: _start.semanticLabel,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  tooltip: 'Change start point',
+                  onPressed: _pickStart,
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                avatar: const Icon(Icons.accessible, size: 18),
+                label: const Text('Step-free'),
+                tooltip: 'Prefer elevators, avoid escalators and stairs',
+                selected: _stepFree,
+                showCheckmark: false,
+                onSelected: (v) {
+                  _stepFree = v;
+                  _replan();
+                },
+              ),
+            ],
+          ),
+          _startNote(context),
+          const SizedBox(height: 8),
+          if (rt == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'No route found from here. Try another start point or ask at any Info Desk.',
+                style: text.bodyMedium,
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: 176,
+              child: PageView.builder(
+                controller: _pages,
+                itemCount: rt.steps.length,
+                onPageChanged: _onPage,
+                itemBuilder: (context, i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: _StepCard(
+                    step: rt.steps[i],
+                    index: i,
+                    count: rt.steps.length,
+                    onOpenMaps: (url) => openLink(context, url),
+                  ),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Previous step',
+                  onPressed: _step > 0 ? () => _goTo(_step - 1) : null,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: _Dots(
+                    count: rt.steps.length,
+                    index: _step,
+                    steps: rt.steps,
+                    onTap: _goTo,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Next step',
+                  onPressed: _step < rt.steps.length - 1
+                      ? () => _goTo(_step + 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+          ],
+          RoomNextStrip(room: widget.room),
+          mapCredit(context, _map, (url) => openLink(context, url)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Grab bar on top of the instructions: drag or tap to collapse/expand.
+class _PanelHandle extends StatelessWidget {
+  const _PanelHandle({required this.collapsed, required this.onTap});
+  final bool collapsed;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: collapsed ? 'Show instructions' : 'Hide instructions, enlarge map',
+    child: InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        height: 24,
+        child: Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: context.brand.body.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// One-line instructions while the map is enlarged.
+class _CollapsedStep extends StatelessWidget {
+  const _CollapsedStep({
+    required this.step,
+    required this.index,
+    required this.count,
+    required this.onPrev,
+    required this.onNext,
+    required this.onExpand,
+  });
+  final RouteStep step;
+  final int index;
+  final int count;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+  final VoidCallback onExpand;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Previous step',
+            onPressed: onPrev,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: onExpand,
+              borderRadius: BorderRadius.circular(Brand.radiusMd),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Step ${index + 1} of $count', style: text.labelSmall),
+                    Text(
+                      step.title,
+                      style: text.titleSmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Next step',
+            onPressed: onNext,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
     );
   }
 }
