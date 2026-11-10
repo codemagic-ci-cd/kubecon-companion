@@ -149,3 +149,12 @@ String? agendaPayloadFrom(String input) {
   final v = uri?.queryParameters[kAgendaParam];
   return v == null || v.isEmpty ? null : v;
 }
+
+/// The agenda payload in scanned QR text, or null when the code is not a
+/// valid agenda (a share link or a bare `a1.…` payload that decodes).
+String? agendaPayloadFromQr(String? raw) {
+  if (raw == null) return null;
+  final payload = agendaPayloadFrom(raw);
+  if (payload == null || decodeAgenda(payload) == null) return null;
+  return payload;
+}

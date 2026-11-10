@@ -7,6 +7,7 @@ import '../theme/brand.dart';
 import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
 import '../widgets/sponsor_tile.dart';
+import '../widgets/live_refresh.dart';
 
 /// Sponsor and booth directory for the Solutions Showcase: search, tier
 /// filter, list grouped by tier, opening hours on top.
@@ -119,29 +120,37 @@ class _ExpoScreenState extends State<ExpoScreen> {
           ),
         ),
       ),
-      body: switch (app.sponsorsStatus) {
-        DetailsStatus.loading when all.isEmpty => const EmptyState(
-          icon: Icons.storefront_outlined,
-          title: 'Loading sponsors…',
-          message: 'The booth directory is on its way.',
-        ),
-        DetailsStatus.failed when all.isEmpty => EmptyState(
-          icon: Icons.cloud_off_outlined,
-          title: 'Could not load sponsors',
-          message: 'Check your connection and try again.',
-          action: PrimaryButton(
-            icon: Icons.refresh,
-            label: 'Try again',
-            onPressed: () => app.loadSponsors(),
+      body: LiveRefresh(
+        child: switch (app.sponsorsStatus) {
+          DetailsStatus.loading when all.isEmpty => const PullableFill(
+            child: EmptyState(
+              icon: Icons.storefront_outlined,
+              title: 'Loading sponsors…',
+              message: 'The booth directory is on its way.',
+            ),
           ),
-        ),
-        _ when all.isEmpty => const EmptyState(
-          icon: Icons.storefront_outlined,
-          title: 'No sponsors yet',
-          message: 'The sponsor directory has not been published.',
-        ),
-        _ => _list(context, app, shown, filtering),
-      },
+          DetailsStatus.failed when all.isEmpty => PullableFill(
+            child: EmptyState(
+              icon: Icons.cloud_off_outlined,
+              title: 'Could not load sponsors',
+              message: 'Check your connection and try again.',
+              action: PrimaryButton(
+                icon: Icons.refresh,
+                label: 'Try again',
+                onPressed: () => app.loadSponsors(),
+              ),
+            ),
+          ),
+          _ when all.isEmpty => const PullableFill(
+            child: EmptyState(
+              icon: Icons.storefront_outlined,
+              title: 'No sponsors yet',
+              message: 'The sponsor directory has not been published.',
+            ),
+          ),
+          _ => _list(context, app, shown, filtering),
+        },
+      ),
     );
   }
 

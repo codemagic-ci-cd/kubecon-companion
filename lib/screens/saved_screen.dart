@@ -3,15 +3,20 @@ import 'package:flutter/material.dart';
 import '../data/venue_time.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
+import '../widgets/agenda_qr_scanner.dart';
 import '../widgets/agenda_share.dart';
 import '../widgets/app_bar_title.dart';
 import '../widgets/calendar_export.dart';
 import '../widgets/common.dart';
 import '../widgets/session_tile.dart';
+import '../widgets/live_refresh.dart';
 
 /// Your starred sessions, grouped by day, with past ones at the bottom.
 class SavedScreen extends StatelessWidget {
-  const SavedScreen({super.key});
+  const SavedScreen({super.key, this.scannerCamera});
+
+  /// Camera for "Scan agenda QR" (tests); null uses the device camera.
+  final QrCameraBuilder? scannerCamera;
 
   @override
   Widget build(BuildContext context) {
@@ -55,30 +60,50 @@ class SavedScreen extends StatelessWidget {
                 : () => AgendaShareSheet.show(context, saved.map((s) => s.id)),
           ),
           const SettingsAction(),
-          _SavedMenu(app: app, hasSaved: saved.isNotEmpty),
+          _SavedMenu(
+            app: app,
+            hasSaved: saved.isNotEmpty,
+            scannerCamera: scannerCamera,
+          ),
         ],
       ),
-      body: saved.isEmpty
-          ? const EmptyState(
-              icon: Icons.star_outline_rounded,
-              title: 'No saved sessions yet',
-              message: 'Tap the star on any session to build your personal agenda. Saved sessions get a reminder 10 minutes before they start.',
-            )
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 24),
-              children: rows,
-            ),
+      body: LiveRefresh(
+        child: saved.isEmpty
+            ? const PullableFill(
+                child: EmptyState(
+                  icon: Icons.star_outline_rounded,
+                  title: 'No saved sessions yet',
+                  message: 'Tap the star on any session to build your personal agenda. Saved sessions get a reminder 10 minutes before they start.',
+                ),
+              )
+            : ListView(
+                padding: const EdgeInsets.only(bottom: 24),
+                children: rows,
+              ),
+      ),
     );
   }
 }
 
-enum _SavedMenuItem { share, calendar, import }
+enum _SavedMenuItem { share, calendar, scan, import }
 
-/// Overflow menu: share, export to calendar, import a shared agenda link.
+/// Overflow menu: share, export to calendar, scan or import a shared agenda.
 class _SavedMenu extends StatelessWidget {
-  const _SavedMenu({required this.app, required this.hasSaved});
+  const _SavedMenu({
+    required this.app,
+    required this.hasSaved,
+    this.scannerCamera,
+  });
   final AppState app;
   final bool hasSaved;
+  final QrCameraBuilder? scannerCamera;
+
+  Future<void> _scan(BuildContext context) async {
+    final payload = await AgendaQrScanner.open(context, camera: scannerCamera);
+    if (payload != null && context.mounted) {
+      await confirmAgendaImport(context, app, payload);
+    }
+  }
 
   Future<void> _import(BuildContext context) async {
     final payload = await showDialog<String>(
@@ -104,6 +129,7 @@ class _SavedMenu extends StatelessWidget {
         app,
         app.savedSessions,
       ),
+      _SavedMenuItem.scan => _scan(context),
       _SavedMenuItem.import => _import(context),
     },
     itemBuilder: (_) => [
@@ -121,6 +147,13 @@ class _SavedMenu extends StatelessWidget {
         child: const ListTile(
           leading: Icon(Icons.event_outlined),
           title: Text('Export saved to calendar'),
+        ),
+      ),
+      const PopupMenuItem(
+        value: _SavedMenuItem.scan,
+        child: ListTile(
+          leading: Icon(Icons.qr_code_scanner),
+          title: Text('Scan agenda QR'),
         ),
       ),
       const PopupMenuItem(

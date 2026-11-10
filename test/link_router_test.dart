@@ -7,7 +7,7 @@ import 'package:kubecon_companion/data/models.dart';
 import 'package:kubecon_companion/main.dart';
 import 'package:kubecon_companion/services/notification_service.dart';
 import 'package:kubecon_companion/state/app_state.dart';
-import 'package:kubecon_companion/widgets/agenda_link_listener.dart';
+import 'package:kubecon_companion/widgets/link_router.dart';
 import 'package:kubecon_companion/widgets/agenda_share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

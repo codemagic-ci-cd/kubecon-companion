@@ -22,6 +22,7 @@ class OfficialMapView extends StatefulWidget {
     this.initialFocus,
     this.liveLocation,
     this.onUserMove,
+    this.spotPin,
   });
 
   final OfficialMap map;
@@ -42,6 +43,10 @@ class OfficialMapView extends StatefulWidget {
 
   /// The user started panning or zooming.
   final VoidCallback? onUserMove;
+
+  /// Image px of a shared spot ("Share my spot"), drawn as a yellow person
+  /// pin.
+  final Offset? spotPin;
 
   @override
   State<OfficialMapView> createState() => OfficialMapViewState();
@@ -268,6 +273,7 @@ class OfficialMapViewState extends State<OfficialMapView>
                           currentStep: widget.currentStep,
                           transform: _transform,
                           dash: _dash,
+                          spot: widget.spotPin,
                         ),
                       ),
                     ),
@@ -303,6 +309,7 @@ class MapOverlayPainter extends CustomPainter {
     required this.currentStep,
     required this.transform,
     required this.dash,
+    this.spot,
   }) : super(repaint: Listenable.merge([transform, dash]));
 
   final OfficialMap map;
@@ -311,6 +318,9 @@ class MapOverlayPainter extends CustomPainter {
   final int? currentStep;
   final TransformationController transform;
   final Animation<double> dash;
+
+  /// Shared spot pin position (image px).
+  final Offset? spot;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -344,6 +354,53 @@ class MapOverlayPainter extends CustomPainter {
           : sel.center;
       _pin(canvas, tip, px, Brand.neverBlue);
     }
+
+    final sp = spot;
+    if (sp != null) _spotPin(canvas, sp, px);
+  }
+
+  /// Bigger SWW Yellow pin with a person icon for a shared spot.
+  void _spotPin(Canvas canvas, Offset tip, double Function(double) px) {
+    final h = px(44), r = px(15);
+    final center = tip - Offset(0, h - r);
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..quadraticBezierTo(
+        center.dx - r * 1.1,
+        center.dy + r * 0.9,
+        center.dx - r,
+        center.dy,
+      )
+      ..arcToPoint(Offset(center.dx + r, center.dy), radius: Radius.circular(r))
+      ..quadraticBezierTo(
+        center.dx + r * 1.1,
+        center.dy + r * 0.9,
+        tip.dx,
+        tip.dy,
+      )
+      ..close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = px(3),
+    );
+    canvas.drawPath(path, Paint()..color = Brand.swwYellow);
+    const icon = Icons.person;
+    final tp = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          fontSize: r * 1.4,
+          color: Brand.darkPage,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
   }
 
   void _paintRoute(Canvas canvas, MapRoute rt, double Function(double) px) {
@@ -525,7 +582,8 @@ class MapOverlayPainter extends CustomPainter {
       old.map != map ||
       old.selected != selected ||
       old.route != route ||
-      old.currentStep != currentStep;
+      old.currentStep != currentStep ||
+      old.spot != spot;
 }
 
 /// The device position on the map: accuracy circle, heading cone and a blue

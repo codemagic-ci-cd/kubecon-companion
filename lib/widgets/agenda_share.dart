@@ -86,31 +86,11 @@ class AgendaShareSheet extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Semantics(
-                label: 'QR code for your agenda link',
-                child: QrImageView(
-                  key: const ValueKey('agenda-qr'),
-                  data: link,
-                  size: qrSize,
-                  padding: EdgeInsets.zero,
-                  backgroundColor: Colors.white,
-                  errorCorrectionLevel: QrErrorCorrectLevel.L,
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: Color(0xFF01091A),
-                  ),
-                  dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: Color(0xFF01091A),
-                  ),
-                ),
-              ),
+            LinkQr(
+              key: const ValueKey('agenda-qr'),
+              data: link,
+              size: qrSize,
+              label: 'QR code for your agenda link',
             ),
             const SizedBox(height: 12),
             SelectableText(
@@ -122,7 +102,7 @@ class AgendaShareSheet extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _CopyLinkButton(onCopy: () => _copy(context, link)),
+                  child: CopyLinkButton(onCopy: () => _copy(context, link)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -143,18 +123,59 @@ class AgendaShareSheet extends StatelessWidget {
   }
 }
 
+/// A dark-on-white QR code for a share link.
+class LinkQr extends StatelessWidget {
+  const LinkQr({
+    super.key,
+    required this.data,
+    required this.size,
+    required this.label,
+  });
+
+  final String data;
+  final double size;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Semantics(
+      label: label,
+      child: QrImageView(
+        data: data,
+        size: size,
+        padding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        errorCorrectionLevel: QrErrorCorrectLevel.L,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Color(0xFF01091A),
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Color(0xFF01091A),
+        ),
+      ),
+    ),
+  );
+}
+
 /// "Copy link" that briefly turns into "Copied". A snackbar would be hidden
 /// behind the modal sheet.
-class _CopyLinkButton extends StatefulWidget {
-  const _CopyLinkButton({required this.onCopy});
+class CopyLinkButton extends StatefulWidget {
+  const CopyLinkButton({super.key, required this.onCopy});
 
   final Future<bool> Function() onCopy;
 
   @override
-  State<_CopyLinkButton> createState() => _CopyLinkButtonState();
+  State<CopyLinkButton> createState() => CopyLinkButtonState();
 }
 
-class _CopyLinkButtonState extends State<_CopyLinkButton> {
+class CopyLinkButtonState extends State<CopyLinkButton> {
   Timer? _reset;
   bool? _copied;
 

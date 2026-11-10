@@ -4,7 +4,8 @@
       {
         "appIDs": ["X8NNQ9CYL2.io.codemagic.kubeconCompanion"],
         "components": [
-          { "?": { "agenda": "*" }, "comment": "agenda import" }
+          { "?": { "agenda": "*" }, "comment": "agenda import" },
+          { "?": { "at": "*" }, "comment": "shared spot" }
         ]
       }
     ]

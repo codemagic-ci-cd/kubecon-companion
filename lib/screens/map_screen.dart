@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/models.dart';
 import '../data/official_map.dart';
 import '../location/live_location.dart';
+import '../location/spot_place.dart';
 import '../location/start_point.dart';
+import '../outdoor/outdoor_loader.dart';
 import '../services/location_service.dart';
 import '../state/app_scope.dart';
 import '../state/app_state.dart';
@@ -12,6 +14,7 @@ import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
 import '../widgets/official_map_view.dart';
 import '../widgets/session_tile.dart';
+import '../widgets/spot_share.dart';
 import 'directions_screen.dart';
 
 /// The official venue map with our room boxes: pan, zoom, jump to a panel,
@@ -22,7 +25,11 @@ class MapScreen extends StatefulWidget {
     this.active = true,
     this.locate = currentLocation,
     this.positions = locationStream,
+    this.outdoorLoader = loadOutdoorMap,
   });
+
+  /// Street map for directions to a shared spot off the venue (tests).
+  final OutdoorLoader outdoorLoader;
 
   /// The Map tab is showing; live location pauses while it is not.
   final bool active;
@@ -66,14 +73,54 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     });
   }
 
+  void _onSpotChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// A shared spot was opened: frame its pin once this tab is laid out.
+  void _onSpot() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final app = _app;
+      final spot = app?.sharedSpot.value;
+      if (!mounted || app == null || spot == null) return;
+      _frameSpot(placeSpot(app.data, spot));
+    });
+  }
+
+  void _frameSpot(SpotPlacement p) {
+    final pos = p.pos;
+    if (pos == null) return;
+    _live?.userMoved();
+    setState(() {
+      _selectedRoomId = null;
+      _regionId = p.regionId;
+    });
+    _mapKey.currentState?.animateTo(
+      Rect.fromCenter(center: pos, width: 520, height: 520),
+      bottomFraction: 0.4,
+    );
+  }
+
+  void _shareSpot() => SpotShareSheet.show(
+    context,
+    locate: widget.locate,
+    lastFix: _live?.placement.value?.fix,
+  );
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final app = AppScope.read(context);
     if (!identical(app, _app)) {
       _app?.mapFocus.removeListener(_onMapFocus);
-      _app = app..mapFocus.addListener(_onMapFocus);
+      _app?.spotFocus.removeListener(_onSpot);
+      _app?.sharedSpot.removeListener(_onSpotChanged);
+      _app = app
+        ..mapFocus.addListener(_onMapFocus)
+        ..spotFocus.addListener(_onSpot)
+        ..sharedSpot.addListener(_onSpotChanged);
       _onMapFocus();
+      if (app.sharedSpot.value != null) _onSpot();
     }
     final on = TickerMode.valuesOf(context).enabled;
     if (on != _onScreen) {
@@ -98,6 +145,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _app?.mapFocus.removeListener(_onMapFocus);
+    _app?.spotFocus.removeListener(_onSpot);
+    _app?.sharedSpot.removeListener(_onSpotChanged);
     _live?.dispose();
     super.dispose();
   }
@@ -226,6 +275,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ),
       );
     }
+    final spot = app.sharedSpot.value;
+    final spotPlace = spot == null ? null : placeSpot(app.data, spot);
     final selected = venue.room(_selectedRoomId);
     final selectedGeo = selected == null
         ? null
@@ -259,6 +310,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       initialFocus: map.region('sp-L1')?.rect,
                       selectedRoomId: selectedGeo?.id,
                       liveLocation: _live?.placement,
+                      spotPin: spotPlace?.pos,
                       onUserMove: () => _live?.userMoved(),
                       onRoomTap: (id) {
                         final room = venue.room(id);
@@ -283,27 +335,57 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         follow: _live?.follow ?? false,
                         onPressed: () => _locateMe(map),
                       ),
+                      const SizedBox(height: 8),
+                      MapIconButton(
+                        tooltip: 'Share my spot',
+                        icon: Icons.person_pin_circle_outlined,
+                        onPressed: _shareSpot,
+                      ),
                     ],
                   ),
                 ),
-                if (_live?.placement.value case final p?)
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: LiveLocationChip(
-                        placement: p,
-                        onDirections: () {
-                          final entrance = map.node(OfficialMap.mainEntranceId);
-                          if (entrance != null) {
-                            openLink(context, walkingDirectionsUrl(entrance));
-                          }
-                        },
-                      ),
-                    ),
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_live?.placement.value case final p?)
+                        LiveLocationChip(
+                          placement: p,
+                          onDirections: () {
+                            final entrance = map.node(
+                              OfficialMap.mainEntranceId,
+                            );
+                            if (entrance != null) {
+                              openLink(context, walkingDirectionsUrl(entrance));
+                            }
+                          },
+                        ),
+                      if (_live?.placement.value != null && spotPlace != null)
+                        const SizedBox(height: 8),
+                      if (spotPlace != null)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 480),
+                          child: SpotCard(
+                            placement: spotPlace,
+                            now: app.now,
+                            onTap: () => _frameSpot(spotPlace),
+                            onClose: app.dismissSpot,
+                            onDirections: () => openSpotDirections(
+                              context,
+                              spotPlace,
+                              locate: widget.locate,
+                              positions: widget.positions,
+                              outdoorLoader: widget.outdoorLoader,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),

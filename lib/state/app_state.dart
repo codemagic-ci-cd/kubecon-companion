@@ -6,10 +6,12 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/directions.dart';
+import '../data/live_data.dart';
 import '../data/models.dart';
 import '../data/official_map.dart';
 import '../data/reminders.dart';
 import '../data/sponsors.dart';
+import '../data/spot_link.dart';
 import '../data/venue_time.dart';
 import '../services/notification_service.dart';
 
@@ -23,6 +25,7 @@ class ConferenceData {
     required this.info,
     this.rawRoomNames = const {},
     this.officialMap,
+    this.versions = const {},
   });
 
   final ScheduleData schedule;
@@ -34,10 +37,45 @@ class ConferenceData {
   /// The annotated official venue map; null when it could not be loaded.
   final OfficialMap? officialMap;
 
+  /// `fetchedAt` of the loaded schedule.json / happenings.json, when known.
+  final Map<String, DateTime?> versions;
+
   List<Session> get sessions => schedule.sessions;
 
-  static Future<ConferenceData> load([AssetBundle? bundle]) async {
+  ConferenceData copyWith({
+    ScheduleData? schedule,
+    List<Happening>? happenings,
+    Map<String, DateTime?>? versions,
+  }) => ConferenceData(
+    schedule: schedule ?? this.schedule,
+    venue: venue,
+    happenings: happenings ?? this.happenings,
+    info: info,
+    rawRoomNames: rawRoomNames,
+    officialMap: officialMap,
+    versions: versions ?? this.versions,
+  );
+
+  /// Loads the bundled data. With [live], a newer copy saved by an earlier
+  /// refresh is used for schedule.json and happenings.json (disk only, never
+  /// the network).
+  static Future<ConferenceData> load([
+    AssetBundle? bundle,
+    LiveDataSource? live,
+  ]) async {
     final b = bundle ?? rootBundle;
+    final schedule = loadPreferred(
+      'schedule.json',
+      bundled: () => b.loadString('assets/data/schedule.json'),
+      parse: parseScheduleData,
+      live: live,
+    );
+    final happenings = loadPreferred(
+      'happenings.json',
+      bundled: () => b.loadString('assets/data/happenings.json'),
+      parse: parseHappenings,
+      live: live,
+    );
     Future<Object?> read(String name) async {
       try {
         return jsonDecode(await b.loadString('assets/data/$name'));
@@ -48,27 +86,32 @@ class ConferenceData {
     }
 
     final results = await Future.wait([
-      read('schedule.json'),
       read('venue.json'),
-      read('happenings.json'),
       read('info.json'),
       read('rooms_raw.json'),
       read('official_map.json'),
     ]);
     OfficialMap? map;
     try {
-      final m = results[5];
+      final m = results[3];
       if (m is Map<String, dynamic>) map = OfficialMap.fromJson(m);
     } catch (e) {
       debugPrint('Could not parse official_map.json: $e');
     }
+    final s = await schedule;
+    final h = await happenings;
+    if (s?.fromCache ?? false) debugPrint('Using saved schedule.json');
     return ConferenceData(
-      schedule: ScheduleData.fromJson(results[0]),
-      venue: results[1] == null ? Venue.empty() : Venue.fromJson(results[1]),
-      happenings: Happening.listFromJson(results[2]),
-      info: ConferenceInfo.fromJson(results[3]),
-      rawRoomNames: parseRawRoomNames(results[4]),
+      schedule: s?.value ?? ScheduleData.fromJson(null),
+      venue: results[0] == null ? Venue.empty() : Venue.fromJson(results[0]),
+      happenings: h?.value ?? const [],
+      info: ConferenceInfo.fromJson(results[1]),
+      rawRoomNames: parseRawRoomNames(results[2]),
       officialMap: map,
+      versions: {
+        'schedule.json': s == null ? null : dataVersion(s.raw),
+        'happenings.json': h == null ? null : dataVersion(h.raw),
+      },
     );
   }
 
@@ -86,6 +129,55 @@ class ConferenceData {
     }
     return null;
   }
+}
+
+/// schedule.json; throws when it has no sessions (a broken or empty file
+/// must never replace a good schedule).
+ScheduleData parseScheduleData(String raw) {
+  final s = ScheduleData.fromJson(jsonDecode(raw));
+  if (s.sessions.isEmpty) throw const FormatException('no sessions');
+  return s;
+}
+
+/// happenings.json (`{"items": [...]}` or a list).
+List<Happening> parseHappenings(String raw) {
+  final j = jsonDecode(raw);
+  if (j is! List && !(j is Map && j['items'] is List)) {
+    throw const FormatException('no items');
+  }
+  return Happening.listFromJson(j);
+}
+
+ConferenceDetails parseDetails(String raw) {
+  final j = jsonDecode(raw);
+  if (j is! Map) throw const FormatException('not an object');
+  return ConferenceDetails.fromJson(j);
+}
+
+/// sponsors.json; throws when it lists none.
+List<Sponsor> parseSponsors(String raw) {
+  final s = Sponsor.listFromJson(jsonDecode(raw));
+  if (s.isEmpty) throw const FormatException('no sponsors');
+  return s;
+}
+
+/// Outcome of [AppState.refresh].
+class RefreshResult {
+  const RefreshResult({
+    required this.updated,
+    required this.failed,
+    required this.at,
+  });
+
+  /// Files fetched (applied, or already current).
+  final int updated;
+
+  /// Files that could not be fetched or parsed.
+  final int failed;
+  final DateTime at;
+
+  /// Nothing could be fetched: still on the saved / bundled data.
+  bool get offline => updated == 0;
 }
 
 /// Loading state of details.json and sponsors.json.
@@ -113,13 +205,15 @@ class DirectionsStart {
 /// App-wide state: data, saved sessions, settings, clock and reminders.
 class AppState extends ChangeNotifier {
   AppState({
-    required this.data,
+    required this._data,
     required this.prefs,
     required this.notifications,
     this.clockOffset = Duration.zero,
     DateTime Function()? clock,
     ConferenceDetails? details,
     List<Sponsor>? sponsors,
+    this.live,
+    this._bundle,
   }) : _clock = clock ?? DateTime.now,
        _details = details,
        _detailsStatus = details == null
@@ -154,7 +248,13 @@ class AppState extends ChangeNotifier {
   static const _kNotify = 'notifications_enabled';
   static const _kTheme = 'theme_mode';
 
-  final ConferenceData data;
+  /// The loaded schedule, venue and happenings; replaced by [refresh].
+  ConferenceData get data => _data;
+  ConferenceData _data;
+
+  /// Where [refresh] fetches the latest data; null disables refreshing.
+  final LiveDataSource? live;
+  final AssetBundle? _bundle;
 
   /// Null when browser storage is unavailable; settings then live in memory.
   final SharedPreferences? prefs;
@@ -182,6 +282,32 @@ class AppState extends ChangeNotifier {
   final mapFocus = ValueNotifier<MapFocusRequest?>(null);
 
   void showOnMap(String roomId) => mapFocus.value = MapFocusRequest(roomId);
+
+  /// A spot someone shared ("Share my spot" link), pinned on the Map tab
+  /// until dismissed.
+  final sharedSpot = ValueNotifier<SharedSpot?>(null);
+
+  /// Bumped by [showSpot] so the shell switches to Map even when the same
+  /// spot is opened again.
+  final spotFocus = ValueNotifier<int>(0);
+
+  void showSpot(SharedSpot spot) {
+    sharedSpot.value = spot;
+    spotFocus.value++;
+  }
+
+  void dismissSpot() => sharedSpot.value = null;
+
+  static const _kSpotName = 'spot_name';
+
+  /// The name last used in "Share my spot" (remembered on this device).
+  String get spotName => prefs?.getString(_kSpotName) ?? _spotName;
+  String _spotName = '';
+  set spotName(String v) {
+    _spotName = v.trim();
+    prefs?.setString(_kSpotName, _spotName);
+  }
+
   Timer? _ticker;
   Timer? _rescheduleDebounce;
 
@@ -220,15 +346,24 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
       try {
-        final raw = await (bundle ?? rootBundle).loadString(
-          'assets/data/details.json',
-          cache: false,
+        final b = bundle ?? _bundle ?? rootBundle;
+        final r = await loadPreferred(
+          'details.json',
+          bundled: () => b.loadString('assets/data/details.json', cache: false),
+          parse: parseDetails,
+          live: live,
         );
-        _details = ConferenceDetails.fromJson(jsonDecode(raw));
-        _detailsStatus = DetailsStatus.loaded;
+        if (r == null) throw StateError('no details.json');
+        // A refresh that finished meanwhile has newer data: keep it.
+        if (_detailsStatus != DetailsStatus.loaded) {
+          _details = r.value;
+          _detailsStatus = DetailsStatus.loaded;
+        }
       } catch (e) {
         debugPrint('Could not load details.json: $e');
-        _detailsStatus = DetailsStatus.failed;
+        if (_detailsStatus != DetailsStatus.loaded) {
+          _detailsStatus = DetailsStatus.failed;
+        }
       } finally {
         _detailsLoad = null;
       }
@@ -250,15 +385,24 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
       try {
-        final raw = await (bundle ?? rootBundle).loadString(
-          'assets/data/sponsors.json',
-          cache: false,
+        final b = bundle ?? _bundle ?? rootBundle;
+        final r = await loadPreferred(
+          'sponsors.json',
+          bundled: () =>
+              b.loadString('assets/data/sponsors.json', cache: false),
+          parse: (raw) => Sponsor.listFromJson(jsonDecode(raw)),
+          live: live,
         );
-        _sponsors = Sponsor.listFromJson(jsonDecode(raw));
-        _sponsorsStatus = DetailsStatus.loaded;
+        if (r == null) throw StateError('no sponsors.json');
+        if (_sponsorsStatus != DetailsStatus.loaded) {
+          _sponsors = r.value;
+          _sponsorsStatus = DetailsStatus.loaded;
+        }
       } catch (e) {
         debugPrint('Could not load sponsors.json: $e');
-        _sponsorsStatus = DetailsStatus.failed;
+        if (_sponsorsStatus != DetailsStatus.loaded) {
+          _sponsorsStatus = DetailsStatus.failed;
+        }
       } finally {
         _sponsorsLoad = null;
       }
@@ -276,11 +420,123 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---- Live data ---------------------------------------------------------
+
+  Future<RefreshResult>? _refreshing;
+  DateTime? _lastRefreshed;
+  DateTime? _lastRefreshAttempt;
+
+  /// Whether this platform can fetch the latest data.
+  bool get canRefresh => live != null;
+
+  /// Whether a [refresh] is running.
+  bool get refreshing => _refreshing != null;
+
+  /// When the last [refresh] got new data (app clock); null before one.
+  DateTime? get lastRefreshed => _lastRefreshed;
+
+  /// Fetches the latest schedule, details, sponsors and happenings from the
+  /// live site and applies what parses. Never throws: files that fail keep
+  /// the data already loaded. Concurrent calls share one fetch.
+  Future<RefreshResult> refresh() =>
+      _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+
+  /// [refresh] in the background when the last attempt is older than
+  /// [autoRefreshAfter] (or there was none), e.g. when the app resumes.
+  Future<void> autoRefresh() async {
+    if (live == null || _refreshing != null) return;
+    final last = _lastRefreshAttempt;
+    if (last != null && _clock().difference(last) < autoRefreshAfter) return;
+    await refresh();
+  }
+
+  Future<RefreshResult> _refresh() async {
+    _lastRefreshAttempt = _clock();
+    final src = live;
+    if (src == null) {
+      return RefreshResult(updated: 0, failed: liveDataFiles.length, at: now);
+    }
+    final bodies = await Future.wait([
+      for (final name in liveDataFiles)
+        () async {
+          try {
+            return await src.fetch(name);
+          } catch (e) {
+            debugPrint('Could not fetch $name: $e');
+            return null;
+          }
+        }(),
+    ]);
+    var data = _data;
+    final versions = {...data.versions};
+    var updated = 0, failed = 0;
+    for (var i = 0; i < liveDataFiles.length; i++) {
+      final name = liveDataFiles[i], raw = bodies[i];
+      if (raw == null) {
+        failed++;
+        continue;
+      }
+      try {
+        var apply = true;
+        switch (name) {
+          case 'schedule.json':
+            apply = fetchedIsCurrent(raw, versions[name]);
+            if (apply) data = data.copyWith(schedule: parseScheduleData(raw));
+          case 'happenings.json':
+            apply = fetchedIsCurrent(raw, versions[name]);
+            if (apply) data = data.copyWith(happenings: parseHappenings(raw));
+          case 'details.json':
+            _details = parseDetails(raw);
+            _detailsStatus = DetailsStatus.loaded;
+          case 'sponsors.json':
+            _sponsors = parseSponsors(raw);
+            _sponsorsStatus = DetailsStatus.loaded;
+        }
+        if (apply) {
+          if (versions.containsKey(name)) versions[name] = dataVersion(raw);
+          unawaited(_saveLive(src, name, raw));
+        }
+        updated++;
+      } catch (e) {
+        debugPrint('Could not apply $name: $e');
+        failed++;
+      }
+    }
+    final result = RefreshResult(updated: updated, failed: failed, at: now);
+    if (updated > 0) {
+      _data = data.copyWith(versions: versions);
+      _lastRefreshed = result.at;
+      notifyListeners();
+      // Times or rooms may have moved: reminders follow the new data.
+      await _reschedule();
+    }
+    return result;
+  }
+
+  /// Saves a fetched file with the fingerprint of the bundled copy, so an
+  /// app update with newer bundled data wins over it later.
+  Future<void> _saveLive(LiveDataSource src, String name, String raw) async {
+    int? hash;
+    try {
+      final b = _bundle ?? rootBundle;
+      hash = fingerprint(await b.loadString('assets/data/$name'));
+    } catch (_) {
+      hash = null;
+    }
+    try {
+      await src.writeCache(name, raw, bundledHash: hash);
+    } catch (_) {
+      // Best effort.
+    }
+  }
+
   @override
   void dispose() {
     _ticker?.cancel();
     _rescheduleDebounce?.cancel();
     mapFocus.dispose();
+    sharedSpot.dispose();
+    spotFocus.dispose();
     super.dispose();
   }
 
@@ -417,6 +673,19 @@ class AppState extends ChangeNotifier {
 
   List<Session> sessionsOn(DateTime day) =>
       data.sessions.where((s) => sameDay(venueDay(s.start), day)).toList();
+
+  /// Day tab to open: today, or the next conference day once everything
+  /// scheduled today has ended (no point opening on a finished day).
+  int get openingDayIndex {
+    final i = defaultDayIndex(now);
+    final day = conferenceDays[i];
+    final isToday = sameDay(day, venueDay(now));
+    if (!isToday || i >= conferenceDays.length - 1) return i;
+    final anyLeft =
+        sessionsOn(day).any((s) => s.end.isAfter(now)) ||
+        timelineFor(day).any((t) => t.end.isAfter(now));
+    return anyLeft ? i : i + 1;
+  }
 
   List<Session> get savedSessions =>
       data.sessions.where((s) => _saved.contains(s.id)).toList();

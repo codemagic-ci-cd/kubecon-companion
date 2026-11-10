@@ -1,21 +1,27 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/agenda_link.dart';
+import 'data/spot_link.dart';
 import 'screens/home_shell.dart';
 import 'services/incoming_links.dart';
+import 'services/live_data_source.dart';
 import 'services/notification_service.dart';
 import 'state/app_scope.dart';
 import 'state/app_state.dart';
 import 'theme/brand.dart';
-import 'widgets/agenda_link_listener.dart';
+import 'widgets/link_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final data = ConferenceData.load();
+  final live = createLiveDataSource();
+  // A newer copy saved by an earlier refresh (native disk cache) is used
+  // when there is one; startup never waits for the network.
+  final data = ConferenceData.load(null, live);
   SharedPreferences? prefs;
   try {
     prefs = await SharedPreferences.getInstance();
@@ -28,14 +34,22 @@ Future<void> main() async {
     prefs: prefs,
     notifications: createNotificationService(),
     clockOffset: demoClockOffset(Uri.base),
+    live: live,
   );
   final agenda = agendaParam(Uri.base);
+  final spot = agenda == null ? spotParamFrom(Uri.base) : null;
   runApp(
     KubeConApp(
       state: state,
-      // A shared agenda link lands on Saved, where the import ends up.
-      initialTab: agenda == null ? initialTabFor(Uri.base) : HomeTabs.saved,
+      // A shared agenda link lands on Saved, where the import ends up; a
+      // shared spot on the Map.
+      initialTab: agenda != null
+          ? HomeTabs.saved
+          : spot != null
+          ? HomeTabs.map
+          : initialTabFor(Uri.base),
       pendingAgenda: agenda,
+      pendingSpot: spot,
       links: incomingLinks(),
     ),
   );
@@ -44,6 +58,11 @@ Future<void> main() async {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(state.loadDetails());
     unawaited(state.loadSponsors());
+    // Native apps can run for days on an old install: check for newer
+    // data once up. The web app is already served fresh.
+    if (!kIsWeb) {
+      Future.delayed(const Duration(seconds: 3), state.autoRefresh);
+    }
   });
   unawaited(state.start());
 }
@@ -80,6 +99,7 @@ class KubeConApp extends StatelessWidget {
     this.home,
     this.initialTab = 0,
     this.pendingAgenda,
+    this.pendingSpot,
     this.links,
   });
   final AppState state;
@@ -89,7 +109,10 @@ class KubeConApp extends StatelessWidget {
   /// Agenda payload from the launch URL, offered for import once up.
   final String? pendingAgenda;
 
-  /// Links opening the native app; agenda links among them offer an import.
+  /// Spot payload (`?at=`) from the launch URL, pinned on the map once up.
+  final String? pendingSpot;
+
+  /// Links opening the native app: shared agendas and spots.
   final Stream<Uri>? links;
 
   @override
@@ -111,7 +134,11 @@ class KubeConApp extends StatelessWidget {
         home:
             home ??
             _withLinks(
-              HomeShell(initialTab: initialTab, pendingAgenda: pendingAgenda),
+              HomeShell(
+                initialTab: initialTab,
+                pendingAgenda: pendingAgenda,
+                pendingSpot: pendingSpot,
+              ),
             ),
       ),
     ),
@@ -119,8 +146,6 @@ class KubeConApp extends StatelessWidget {
 
   Widget _withLinks(Widget child) {
     final links = this.links;
-    return links == null
-        ? child
-        : AgendaLinkListener(links: links, child: child);
+    return links == null ? child : LinkRouter(links: links, child: child);
   }
 }

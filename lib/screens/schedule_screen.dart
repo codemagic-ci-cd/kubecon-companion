@@ -13,6 +13,7 @@ import '../widgets/now_banner.dart';
 import '../widgets/session_results.dart';
 import '../widgets/speaker_card.dart';
 import '../widgets/sponsor_tile.dart';
+import '../widgets/live_refresh.dart';
 import 'expo_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     _tabs = TabController(
       length: conferenceDays.length,
       vsync: this,
-      initialIndex: defaultDayIndex(app.now),
+      initialIndex: app.openingDayIndex,
     );
   }
 
@@ -242,33 +243,45 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           ),
         ),
       ),
-      body: searching
-          ? SessionResults(
-              sessions: results,
-              now: app.now,
-              leading: _query.length < 2
-                  ? null
-                  : SponsorMatches.forQuery(app.sponsors, _query),
-              summary:
-                  '${results.length} ${results.length == 1 ? 'result' : 'results'} across all days',
-            )
-          : TabBarView(
-              controller: _tabs,
-              children: [
-                for (final d in conferenceDays)
-                  _DayList(
-                    key: PageStorageKey('day-${d.day}'),
-                    day: d,
-                    isToday: sameDay(d, today),
-                    now: app.now,
-                    sessions: app
-                        .sessionsOn(d)
-                        .where((s) => _matches(app, s))
-                        .toList(),
-                    filtered: filterCount > 0,
-                  ),
-              ],
-            ),
+      body: LiveRefresh(
+        child: searching
+            ? SessionResults(
+                sessions: results,
+                now: app.now,
+                leading: _query.length < 2
+                    ? null
+                    : SponsorMatches.forQuery(app.sponsors, _query),
+                summary:
+                    '${results.length} ${results.length == 1 ? 'result' : 'results'} across all days',
+              )
+            : TabBarView(
+                controller: _tabs,
+                children: [
+                  for (final d in conferenceDays)
+                    _DayList(
+                      key: PageStorageKey('day-${d.day}'),
+                      day: d,
+                      isToday: sameDay(d, today),
+                      now: app.now,
+                      sessions: app
+                          .sessionsOn(d)
+                          .where((s) => _matches(app, s))
+                          .toList(),
+                      filtered: filterCount > 0,
+                      nextDay:
+                          conferenceDays.indexOf(d) < conferenceDays.length - 1
+                          ? conferenceDays[conferenceDays.indexOf(d) + 1]
+                          : null,
+                      onNextDay: () => _tabs.animateTo(
+                        (conferenceDays.indexOf(d) + 1).clamp(
+                          0,
+                          conferenceDays.length - 1,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -338,6 +351,8 @@ class _DayList extends StatefulWidget {
     required this.now,
     required this.sessions,
     required this.filtered,
+    this.nextDay,
+    this.onNextDay,
   });
 
   final DateTime day;
@@ -345,6 +360,10 @@ class _DayList extends StatefulWidget {
   final DateTime now;
   final List<Session> sessions;
   final bool filtered;
+
+  /// The following conference day, for the "That's a wrap" card.
+  final DateTime? nextDay;
+  final VoidCallback? onNextDay;
 
   @override
   State<_DayList> createState() => _DayListState();
@@ -390,11 +409,60 @@ class _DayListState extends State<_DayList> {
         (s) => fmtTime(s.start),
       );
     }
+    // Everything today has ended: say so and point to the next day instead
+    // of showing only a collapsed "ended" row.
+    final wrapped =
+        w.isToday &&
+        !w.filtered &&
+        w.sessions.every((s) => !s.end.isAfter(w.now));
+    final header = wrapped
+        ? _WrapCard(nextDay: w.nextDay, onNextDay: w.onNextDay)
+        : banner;
     return SessionRowsList(
       rows: rows,
-      header: banner,
+      header: header,
       expandedEnded: _showEnded,
       onToggleEnded: () => setState(() => _showEnded = !_showEnded),
+    );
+  }
+}
+
+class _WrapCard extends StatelessWidget {
+  const _WrapCard({this.nextDay, this.onNextDay});
+
+  final DateTime? nextDay;
+  final VoidCallback? onNextDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: context.brand.cardDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("That's a wrap for today", style: text.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              nextDay == null
+                  ? 'Thanks for joining KubeCon + CloudNativeCon North America 2026.'
+                  : 'Nothing else is scheduled today. See what\'s on ${fmtDayLong(nextDay!, isDay: true)}.',
+              style: text.bodyMedium,
+            ),
+            if (nextDay != null && onNextDay != null) ...[
+              const SizedBox(height: 16),
+              PrimaryButton(
+                icon: Icons.arrow_forward,
+                label: 'See ${fmtDayShort(nextDay!)}',
+                onPressed: onNextDay,
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

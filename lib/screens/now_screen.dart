@@ -10,6 +10,7 @@ import '../theme/brand.dart';
 import '../widgets/app_bar_title.dart';
 import '../widgets/common.dart';
 import '../widgets/now_banner.dart';
+import '../widgets/live_refresh.dart';
 
 /// Meals, breaks, receptions and other happenings, plus what's live now.
 class NowScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class NowScreen extends StatefulWidget {
 }
 
 class _NowScreenState extends State<NowScreen> {
-  late int _day = defaultDayIndex(AppScope.read(context).now);
+  late int _day = AppScope.read(context).openingDayIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -43,89 +44,91 @@ class _NowScreenState extends State<NowScreen> {
         title: const AppBarTitle(),
         actions: const [SettingsAction()],
       ),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                for (var i = 0; i < conferenceDays.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      showCheckmark: false,
-                      label: Text(
-                        sameDay(conferenceDays[i], today)
-                            ? 'Today'
-                            : fmtDayShort(conferenceDays[i]),
+      body: LiveRefresh(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  for (var i = 0; i < conferenceDays.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        showCheckmark: false,
+                        label: Text(
+                          sameDay(conferenceDays[i], today)
+                              ? 'Today'
+                              : fmtDayShort(conferenceDays[i]),
+                        ),
+                        labelStyle: Theme.of(context).textTheme.labelLarge
+                            ?.copyWith(
+                              color: i == _day
+                                  ? Colors.white
+                                  : context.brand.heading,
+                            ),
+                        selected: i == _day,
+                        onSelected: (_) => setState(() => _day = i),
                       ),
-                      labelStyle: Theme.of(context).textTheme.labelLarge
-                          ?.copyWith(
-                            color: i == _day
-                                ? Colors.white
-                                : context.brand.heading,
-                          ),
-                      selected: i == _day,
-                      onSelected: (_) => setState(() => _day = i),
                     ),
-                  ),
-              ],
-            ),
-          ),
-          if (!app.notificationsEnabled) const _NotifyPrompt(),
-          if (isToday) const NowBanner(),
-          SectionTitle(
-            isToday ? 'Still to come today' : fmtDayLong(day, isDay: true),
-          ),
-          if (upcoming.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                isToday
-                    ? 'That is a wrap for today. See you tomorrow!'
-                    : 'Nothing listed for this day yet.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                ],
               ),
             ),
-          for (final i in upcoming) _TimelineTile(item: i),
-          if (facilities.isNotEmpty) ...[
-            const SectionTitle('Good to know'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: BrandCard(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  children: [
-                    for (final f in facilities)
-                      ListTile(
-                        leading: Icon(_facilityIcon(f)),
-                        title: Text(f.title),
-                        subtitle: Text(
-                          [
-                            f.location ?? app.data.locate(f.roomId).label,
-                            if (!f.title.toLowerCase().contains('room') ||
-                                f.kind == 'registration')
-                              fmtRange(f.start, f.end),
-                          ].join(' · '),
-                        ),
-                        onTap: () => openTimelineItem(
-                          context,
-                          TimelineItem.happening(f),
-                        ),
-                      ),
-                  ],
+            if (!app.notificationsEnabled) const _NotifyPrompt(),
+            if (isToday) const NowBanner(),
+            SectionTitle(
+              isToday ? 'Still to come today' : fmtDayLong(day, isDay: true),
+            ),
+            if (upcoming.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  isToday
+                      ? 'That is a wrap for today. See you tomorrow!'
+                      : 'Nothing listed for this day yet.',
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
-            ),
+            for (final i in upcoming) _TimelineTile(item: i),
+            if (facilities.isNotEmpty) ...[
+              const SectionTitle('Good to know'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: BrandCard(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    children: [
+                      for (final f in facilities)
+                        ListTile(
+                          leading: Icon(_facilityIcon(f)),
+                          title: Text(f.title),
+                          subtitle: Text(
+                            [
+                              f.location ?? app.data.locate(f.roomId).label,
+                              if (!f.title.toLowerCase().contains('room') ||
+                                  f.kind == 'registration')
+                                fmtRange(f.start, f.end),
+                            ].join(' · '),
+                          ),
+                          onTap: () => openTimelineItem(
+                            context,
+                            TimelineItem.happening(f),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (past.isNotEmpty) ...[
+              const SectionTitle('Earlier today'),
+              for (final i in past) _TimelineTile(item: i, dimmed: true),
+            ],
           ],
-          if (past.isNotEmpty) ...[
-            const SectionTitle('Earlier today'),
-            for (final i in past) _TimelineTile(item: i, dimmed: true),
-          ],
-        ],
+        ),
       ),
     );
   }
