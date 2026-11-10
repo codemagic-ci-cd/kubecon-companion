@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/agenda_link.dart';
@@ -16,6 +17,7 @@ import 'state/app_state.dart';
 import 'theme/brand.dart';
 import 'widgets/link_router.dart';
 import 'data/session_link.dart';
+import 'services/history_sync.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +39,10 @@ Future<void> main() async {
     clockOffset: demoClockOffset(Uri.base),
     live: live,
   );
+  // Web: the app keeps browser back/forward in step with its pages itself,
+  // so Flutter's single-entry history handling is switched off.
+  final history = browserHistory();
+  if (history != null) setUrlStrategy(null);
   final agenda = agendaParam(Uri.base);
   final spot = agenda == null ? spotParamFrom(Uri.base) : null;
   final session = agenda == null && spot == null
@@ -56,6 +62,7 @@ Future<void> main() async {
       pendingSpot: spot,
       pendingSession: session,
       links: incomingLinks(),
+      historySync: history == null ? null : HistorySync(history),
     ),
   );
   // Descriptions and bios (details.json) are not needed for the first screen:
@@ -107,6 +114,7 @@ class KubeConApp extends StatelessWidget {
     this.pendingSpot,
     this.pendingSession,
     this.links,
+    this.historySync,
   });
   final AppState state;
   final Widget? home;
@@ -124,6 +132,9 @@ class KubeConApp extends StatelessWidget {
   /// Links opening the native app: shared agendas and spots.
   final Stream<Uri>? links;
 
+  /// Web: browser back/forward for pushed pages.
+  final HistorySync? historySync;
+
   @override
   Widget build(BuildContext context) => AppScope(
     state: state,
@@ -140,6 +151,7 @@ class KubeConApp extends StatelessWidget {
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
         themeMode: state.themeMode,
+        navigatorObservers: [?historySync],
         home:
             home ??
             _withLinks(
