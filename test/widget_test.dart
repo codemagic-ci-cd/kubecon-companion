@@ -779,6 +779,28 @@ void main() {
     expect(pill.onTap, isNull);
   });
 
+  testWidgets('schedule filters are remembered between launches', (
+    tester,
+  ) async {
+    final state = await makeState(
+      prefs: {
+        // 'gone' no longer matches any session and is dropped.
+        'schedule_filter_types': <String>['workshop', 'gone'],
+      },
+    );
+    await pumpApp(tester, state);
+    expect(find.textContaining('across all days'), findsOneWidget);
+    expect(find.text('Session w1'), findsOneWidget);
+    expect(find.text('Scaling CI on Kubernetes'), findsNothing);
+    expect(find.text('1'), findsOneWidget); // filter count badge
+
+    await tester.tap(find.byIcon(Icons.tune));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear all'));
+    await tester.pumpAndSettle();
+    expect(state.prefs!.getStringList('schedule_filter_types'), isEmpty);
+  });
+
   testWidgets('session page links to the full schedule of its room', (
     tester,
   ) async {

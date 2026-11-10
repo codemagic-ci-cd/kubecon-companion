@@ -40,6 +40,30 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       vsync: this,
       initialIndex: app.openingDayIndex,
     );
+    _restoreFilters(app);
+  }
+
+  static const _kFilterTypes = 'schedule_filter_types';
+  static const _kFilterTracks = 'schedule_filter_tracks';
+
+  /// Brings back the filters from the last visit, dropping any that no
+  /// longer match a session (e.g. a track renamed in a data refresh).
+  void _restoreFilters(AppState app) {
+    final prefs = app.prefs;
+    if (prefs == null) return;
+    final types = {for (final s in app.data.sessions) s.type};
+    final tracks = {for (final s in app.data.sessions) ?s.track};
+    _types.addAll(
+      (prefs.getStringList(_kFilterTypes) ?? const []).where(types.contains),
+    );
+    _tracks.addAll(
+      (prefs.getStringList(_kFilterTracks) ?? const []).where(tracks.contains),
+    );
+  }
+
+  void _saveFilters(AppState app) {
+    app.prefs?.setStringList(_kFilterTypes, _types.toList());
+    app.prefs?.setStringList(_kFilterTracks, _tracks.toList());
   }
 
   @override
@@ -89,6 +113,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           void toggle(Set<String> set, String v) {
             setSheet(() => set.contains(v) ? set.remove(v) : set.add(v));
             setState(() {});
+            _saveFilters(app);
           }
 
           return DraggableScrollableSheet(
@@ -114,6 +139,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           _tracks.clear();
                         });
                         setState(() {});
+                        _saveFilters(app);
                       },
                       child: const Text('Clear all'),
                     ),
