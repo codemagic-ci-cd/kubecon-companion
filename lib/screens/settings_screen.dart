@@ -181,7 +181,7 @@ class AboutCard extends StatelessWidget {
           Text('Built & shipped with Codemagic', style: text.titleMedium),
           const SizedBox(height: 8),
           Text(
-            'One Flutter codebase, three targets: this Flutter app is built, tested and released to the web, Android and iOS by Codemagic CI/CD.',
+            'This is a Flutter app, built, tested and released to the web, Android and iOS by Codemagic CI/CD.',
             style: text.bodyMedium,
           ),
           const SizedBox(height: 16),
