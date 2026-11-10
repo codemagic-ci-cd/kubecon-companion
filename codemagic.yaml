@@ -71,6 +71,7 @@ workflows:
       flutter: stable
       groups:
         - android_signing # app-level secure vars: CM_KEYSTORE_B64, CM_KEYSTORE_PASSWORD, CM_KEY_PASSWORD, CM_KEY_ALIAS
+        - google_play # app-level secure var: GCLOUD_SERVICE_ACCOUNT_CREDENTIALS (Play service account key, never in git)
       # Optional: upload a keystore in Codemagic and reference it here to sign
       # releases. Without it, builds are signed with the debug key.
       # android_signing:
@@ -93,6 +94,11 @@ workflows:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/bundle/release/*.aab
       - build/app/outputs/mapping/release/mapping.txt
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        # Internal testing: up to 100 testers, available within minutes, no review.
+        track: internal
 
   ios-simulator:
     name: iOS simulator build (unsigned, for demos)
