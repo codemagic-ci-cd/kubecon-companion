@@ -60,20 +60,17 @@ footer a:hover{color:var(--accent)}
 
   <section class="card" id="android">
     <h2>Android</h2>
-    <p>Install the app directly. No Play Store needed.</p>
-    <a class="btn" id="apk" href="#" download data-install="Android APK">
+    <p>Get it from Google Play. It's a free open beta, so updates arrive automatically.</p>
+    <a class="btn" href="https://play.google.com/apps/testing/io.codemagic.kubecon_companion" data-install="Google Play">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-      Download the Android app
+      Get it on Google Play
     </a>
     <ol>
-      <li>Open the downloaded file.</li>
-      <li>If asked, allow installs from your browser, then tap Install.</li>
-      <li>If Play Protect asks about an unknown developer, tap More details, then Install anyway.</li>
+      <li>Tap the button and sign in to Google if asked.</li>
+      <li>Tap Become a tester, then the Google Play link, then Install.</li>
     </ol>
-    <div class="meta" id="apk-meta">About 57 MB · Android 7.0 or newer</div>
-    <!-- Google Play open testing: show once the store page is live.
-    <a class="btn subtle" href="https://play.google.com/store/apps/details?id=io.codemagic.kubecon_companion" style="margin-top:16px">Or get it on Google Play</a>
-    -->
+    <a class="btn subtle" id="apk" href="#" download data-install="Android APK" style="margin-top:16px">Or download the APK directly</a>
+    <div class="meta" id="apk-meta">APK: about 77 MB · Android 7.0 or newer. Open the file, allow installs from your browser, then tap Install.</div>
   </section>
 
   <section class="card" id="ios">
@@ -100,8 +97,8 @@ footer a:hover{color:var(--accent)}
   <footer>Built and shipped with <a href="https://codemagic.io/?utm_source=kubecon-companion&amp;utm_medium=get-page">Codemagic</a>. This is a Flutter app, built, tested and released to the web, Android and iOS by Codemagic CI/CD. <a href="https://github.com/codemagic-ci-cd/kubecon-companion">See the source on GitHub</a>.</footer>
 </main>
 <script>
-// Latest signed APK from the Codemagic build (public link valid until 2026-11-14).
-var APK_URL = "https://api.codemagic.io/artifacts/.eJwVwcuyQzAAANB_6d5MtGgsukBVX0IjRth0tMElFeqV9u8795xVZf2z37DTW36W0Ep0ricbVgkDg-0j1oKrl8Y-6q2mLf9UDyRcBvdvxrs54nviWFyB03ArFkld2gJufPz2hTw17_Q0QICL892MxiYQpLlgNdM9LMfO2uYjF_GJruGtUNy1R6lRxnd-Oj2YFZ9Rl5fsGpAttFVwQ1rWA7Ou_Xzhs6EVoVE6pmtOw3qij6p2ZNfMIUERiWCVYFcLJUz1Y_nE9Zwr5auy9_TZNwlwcX1kKrLZuw69CFy0JZWVQvAndemweU2t2XzRQYQyOcosZFmRjuLAuNztVj-LDGGo.UM4u9gJoG5KCUe8owgv7aWHtR1I";
+// Latest signed APK from the Codemagic build (public link valid until 2027-03-31).
+var APK_URL = "https://api.codemagic.io/artifacts/.eJwVwUuOgjAAANC7uCfBlvBZuCjKZ6xAJlRauiGiTFtQKQygcvrJvLcR6J8_ePCdUq2UBcnFW42wM8HVMxLBbjrrX8IeCZzDLNbcUmXu08pg4HzyycA-OZtAOTdR8HS97ZKuDa5MfEczD9KaPdhpQvffhS5T8JB-DUW-Cq6uGBNREhDL1ldGxsL-pAPlrLAxvxoBMFJS2sUZLuXHOXwz2q-XpIQZBQIcWsDnF-4syWvd1HDh9ySAoDsW-RP1nfiJqE0u8gh1OoZjilpv3jdVlIfkGQz7dXAsEcdCfIxKanDV1FFFMr31jVMzQnLEqae17ybD263BtniEr91u8wcvO2It.H1NtAg2Ye2LH8TJcX84CEM1nU4U";
 document.getElementById('apk').href = APK_URL;
 // Count install button taps (Plausible custom event "Install").
 document.querySelectorAll('[data-install]').forEach(function (a) {
