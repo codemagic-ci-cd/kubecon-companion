@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:M;src:url(Metropolis-Regular.otf);font-weight:400}
+@font-face{font-family:M;src:url(Metropolis-SemiBold.otf);font-weight:600}
+@font-face{font-family:M;src:url(Metropolis-Bold.otf);font-weight:700}
+html,body{margin:0;width:1024px;height:500px;overflow:hidden;background:#01091A;font-family:M,sans-serif;letter-spacing:-.2px;position:relative}
+.glow{position:absolute;width:760px;height:420px;right:-240px;bottom:-240px;background:linear-gradient(90deg,#0031EA,#008BF7,#00CEFF,#FE19FF,#FF4D13);filter:blur(110px);opacity:.5;border-radius:50%}
+.map{position:absolute;right:96px;top:70px;width:340px;height:360px;border-radius:18px;overflow:hidden;background:#fff}
+.map img{width:100%;height:100%;object-fit:cover;object-position:30% 55%}
+.pin{position:absolute;width:26px;height:26px;border-radius:50% 50% 50% 0;background:#0051FF;transform:rotate(-45deg);box-shadow:0 0 0 4px #fff;right:300px;top:240px}
+.left{position:absolute;left:96px;top:70px;width:440px}
+.logo{height:30px;display:block}
+h1{color:#fff;font-weight:700;font-size:48px;line-height:1.1;margin:34px 0 14px}
+p{color:#D2DBEE;font-size:20px;line-height:1.45;margin:0}
+.chips{margin-top:24px;display:flex;gap:10px}
+.chip{background:#232A38;color:#fff;font-weight:600;font-size:16px;padding:8px 15px;border-radius:999px}
+.foot{position:absolute;left:96px;bottom:70px;color:#FF9100;font-weight:600;font-size:19px}
+</style></head><body>
+<div class="glow"></div>
+<div class="map"><img src="mapcrop.jpg"></div>
+<div class="pin"></div>
+<div class="left">
+<img class="logo" src="logo-white.svg">
+<h1>KubeCon Companion</h1>
+<p>Schedule, venue map with turn-by-turn directions, and reminders for KubeCon + CloudNativeCon NA 2026.</p>
+<div class="chips"><span class="chip">iOS</span><span class="chip">Android</span><span class="chip">Web app</span></div>
+</div>
+<div class="foot">Built and shipped with Codemagic</div>
+</body></html>
